@@ -1,27 +1,29 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import screenbg from '../assets/images/screenbg.png';
+import { useState } from 'react';
+import { ActivityIndicator, Image, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
+import { Images } from '../constants/images';
 
 export default function LoginScreen() {
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (!phoneNumber || phoneNumber.length < 10) {
-      alert('Please enter a valid phone number');
+    if (!email || !password) {
+      alert('Please enter email and password');
       return;
     }
 
     setLoading(true);
     try {
-      // TODO: Implement actual phone authentication logic here
+      // TODO: Implement actual authentication logic here
       // For now, just simulating a login process
       await new Promise(resolve => setTimeout(resolve, 1000));
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/home');
     } catch (error) {
       alert('Error during login. Please try again.');
       console.error(error);
@@ -30,18 +32,32 @@ export default function LoginScreen() {
     }
   };
 
+  const handleRegister = () => {
+    // TODO: Navigate to register screen
+    alert('Register functionality not implemented yet');
+  };
+
   return (
-    <ThemedView style={styles.container} backgroundImage={screenbg}>
-      <ThemedText style={styles.title}>Welcome to Evaira</ThemedText>
-      <ThemedText style={styles.subtitle}>Login with your phone number</ThemedText>
+    <ThemedView style={styles.container} backgroundImage={Images.background}>
+      <Image source={Images.logo} style={styles.logo} />
+      <ThemedText style={styles.title}>EVAIRA</ThemedText>
       
       <TextInput
         style={styles.input}
-        placeholder="Enter your phone number"
+        placeholder="Enter your email"
         placeholderTextColor="#666"
-        keyboardType="phone-pad"
-        value={phoneNumber}
-        onChangeText={setPhoneNumber}
+        keyboardType="email-address"
+        value={email}
+        onChangeText={setEmail}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Enter your password"
+        placeholderTextColor="#666"
+        secureTextEntry
+        value={password}
+        onChangeText={setPassword}
       />
 
       <TouchableOpacity
@@ -52,8 +68,12 @@ export default function LoginScreen() {
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <ThemedText style={styles.buttonText}>Continue</ThemedText>
+          <ThemedText style={styles.buttonText}>Login</ThemedText>
         )}
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={handleRegister}>
+        <ThemedText style={styles.registerText}>Don't have an account? Register</ThemedText>
       </TouchableOpacity>
     </ThemedView>
   );
@@ -66,15 +86,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 20,
   },
-  subtitle: {
-    fontSize: 16,
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
     marginBottom: 30,
-    textAlign: 'center',
   },
   input: {
     width: '100%',
@@ -94,10 +114,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 20,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  registerText: {
+    color: '#007AFF',
+    fontSize: 16,
+    textDecorationLine: 'underline',
   },
 });

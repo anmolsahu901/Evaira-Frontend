@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Image, StyleSheet } from 'react-native';
 import { ThemedView } from '../components/themed-view';
+import { Images } from '../constants/images';
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -9,15 +10,15 @@ export default function SplashScreen() {
   useEffect(() => {
     const timer = setTimeout(() => {
       router.replace('/login');
-    }, 5000); // 3 seconds
+    }, 3000); // 3 seconds
 
     return () => clearTimeout(timer);
   }, [router]);
 
   return (
-    <ThemedView style={styles.container} backgroundImage={require('@/assets/images/screenbg.png')}>
+    <ThemedView style={styles.container}>
       <Image
-        source={require('@/assets/images/screenbg.png')}
+        source={Images.logo}
         style={styles.icon}
       />
     </ThemedView>
