@@ -39,7 +39,8 @@ export default function ProfileDetailsScreen() {
     try {
       // TODO: Save profile details to API
       await new Promise((r) => setTimeout(r, 900));
-      router.replace('/(tabs)/home');
+      // Navigate to the occasion selection screen
+      router.push('/occasions');
     } catch (e) {
       console.error(e);
       alert('Failed to save profile details');
@@ -115,8 +116,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    paddingTop: 120,
-    paddingBottom: 40,
+    paddingTop: 150,
+    paddingBottom: 90,
   },
   topBar: {
     position: 'absolute',
@@ -137,7 +138,8 @@ const styles = StyleSheet.create({
   },
   form: {
     flex: 1,
-    marginTop: 80,
+    marginTop: 90,
+    marginBottom: 70,
     paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'space-between',
