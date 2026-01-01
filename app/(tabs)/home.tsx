@@ -23,6 +23,10 @@ export default function Home() {
   };
 
   const handleLike = async () => {
+    const action = liked ? 'Unlike' : 'Like';
+    // quick popup feedback
+    Alert.alert(action, `You tapped ${action}.`);
+
     // optimistic update
     const delta = liked ? -1 : 1;
     setLiked(!liked);
@@ -38,6 +42,10 @@ export default function Home() {
       Alert.alert('Error', 'Failed to send like to server.');
       console.error('Like API failed', e);
     }
+  };
+
+  const handleIconPress = (action: string) => {
+    Alert.alert(action, `You tapped ${action}.`);
   };
 
   return (
