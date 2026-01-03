@@ -7,73 +7,92 @@ import { ThemedView } from '../components/themed-view';
 import { Images } from '../constants/images';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [phoneOrEmail, setPhoneOrEmail] = useState('');
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      alert('Please enter email and password');
+  const handleContinue = async () => {
+    if (!phoneOrEmail) {
+      alert('Please enter phone number or email');
+      return;
+    }
+    if (!otp) {
+      alert('Please enter OTP');
       return;
     }
 
     setLoading(true);
     try {
-      // TODO: Implement actual authentication logic here
-      // For now, just simulating a login process
+      // TODO: Replace with real verification logic
       await new Promise(resolve => setTimeout(resolve, 1000));
       router.replace('/(tabs)/home');
     } catch (error) {
-      alert('Error during login. Please try again.');
+      alert('Error during verification. Please try again.');
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRegister = () => {
-    // TODO: Navigate to register screen
-    alert('Register functionality not implemented yet');
+  const handleResendOtp = async () => {
+    setResending(true);
+    try {
+      // TODO: Trigger OTP resend via API
+      await new Promise(resolve => setTimeout(resolve, 800));
+      alert('OTP resent');
+    } catch (e) {
+      alert('Failed to resend OTP');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleSignUp = () => {
+    router.push('/register' as any);
   };
 
   return (
     <ThemedView style={styles.container} backgroundImage={Images.background}>
       <Image source={Images.logo} style={styles.logo} />
-      <ThemedText style={styles.title}>EVAIRA</ThemedText>
-      
+
       <TextInput
         style={styles.input}
-        placeholder="Enter your email"
+        placeholder="Enter Phone Number or Email"
         placeholderTextColor="#666"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
+        keyboardType="default"
+        value={phoneOrEmail}
+        onChangeText={setPhoneOrEmail}
       />
 
       <TextInput
         style={styles.input}
-        placeholder="Enter your password"
+        placeholder="Enter OTP"
         placeholderTextColor="#666"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
+        keyboardType="numeric"
+        value={otp}
+        onChangeText={setOtp}
       />
 
       <TouchableOpacity
         style={styles.button}
-        onPress={handleLogin}
+        onPress={handleContinue}
         disabled={loading}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <ThemedText style={styles.buttonText}>Login</ThemedText>
+          <ThemedText style={styles.buttonText}>Continue</ThemedText>
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={handleRegister}>
-        <ThemedText style={styles.registerText}>Don't have an account? Register</ThemedText>
+      <TouchableOpacity onPress={handleResendOtp} style={styles.resendWrapper}>
+        <ThemedText style={styles.resendText}>{resending ? 'Resending...' : 'Resend OTP'}</ThemedText>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={handleSignUp} style={styles.signUpWrapper}>
+        <ThemedText style={styles.signUpText}>Don't have an account? Sign Up</ThemedText>
       </TouchableOpacity>
     </ThemedView>
   );
@@ -82,48 +101,54 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 30,
+    width: 160,
+    height: 80,
+    marginBottom: 32,
+    resizeMode: 'contain',
   },
   input: {
-    width: '100%',
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 20,
-    fontSize: 16,
+    width: '90%',
+    height: 64,
+    borderWidth: 4,
+    borderColor: '#111',
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    marginBottom: 18,
+    fontSize: 18,
     backgroundColor: '#fff',
   },
   button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
+    width: '80%',
+    height: 64,
+    backgroundColor: '#2b3133',
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginTop: 8,
+    marginBottom: 12,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 20,
   },
-  registerText: {
-    color: '#007AFF',
+  resendWrapper: {
+    marginTop: 8,
+    marginBottom: 18,
+  },
+  resendText: {
     fontSize: 16,
-    textDecorationLine: 'underline',
+    color: '#111',
+  },
+  signUpWrapper: {
+    marginTop: 8,
+  },
+  signUpText: {
+    fontSize: 16,
+    color: '#111',
   },
 });
