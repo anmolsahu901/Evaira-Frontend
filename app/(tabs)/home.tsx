@@ -52,11 +52,11 @@ export default function Home() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <Text style={styles.headerText}>
           Evaira <Text style={styles.citeText}></Text>
         </Text>
-      </View>
+      </View> */}
 
       <ImageBackground
         source={{ uri: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1920&auto=format&fit=crop' }}

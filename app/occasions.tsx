@@ -37,7 +37,7 @@ export default function OccasionsScreen() {
   };
 
   return (
-    <ThemedView style={styles.container} backgroundImage={Images.background}>
+    <ThemedView style={styles.container} >
       <View style={styles.topBar}>
         <ThemedText style={styles.topBarText}>Evaira</ThemedText>
       </View>
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     left: -24,
     right: -24,
     height: 84,
-    backgroundColor: '#263238',
+    backgroundColor: '#1a2a32ff',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   option: {
     width: '92%',
     height: 72,
-    borderWidth: 4,
+    borderWidth: 3,
     borderColor: '#111',
     borderRadius: 20,
     paddingHorizontal: 20,

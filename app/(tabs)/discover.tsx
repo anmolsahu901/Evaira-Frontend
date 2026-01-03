@@ -4,7 +4,7 @@ import { Text, View, StyleSheet } from 'react-native';
 export default function Discover() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>discover</Text>
+      <Text style={styles.text}>Discover</Text>
     </View>
   );
 }
