@@ -50,7 +50,7 @@ export default function LoginScreen() {
   };
 
   const handleSignUp = () => {
-    router.push('/register' as any);
+    router.push('/createProfile' as any);
   };
 
   return (

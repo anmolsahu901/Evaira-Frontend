@@ -39,8 +39,11 @@ function MenuItem({ item, onPress, textColor, iconColor, borderColor, chevColor,
   );
 }
 
+import { useUserProfile } from '../../context/UserProfileContext';
+
 export default function Account() {
   const router = useRouter();
+  const { fullName, birthdate } = useUserProfile();
 
   const textColor = useThemeColor({}, 'text');
   const iconColor = useThemeColor({}, 'icon');
@@ -48,6 +51,18 @@ export default function Account() {
   const chevColor = useThemeColor({}, 'icon');
   const rippleColor = useThemeColor({ light: 'rgba(0,0,0,0.06)', dark: 'rgba(255,255,255,0.06)' }, 'background');
   const iconBg = useThemeColor({ light: '#fff', dark: '#111' }, 'background');
+
+  const computeAge = (iso?: string) => {
+    if (!iso) return undefined;
+    const b = new Date(iso);
+    if (Number.isNaN(b.getTime())) return undefined;
+    const now = new Date();
+    let age = now.getFullYear() - b.getFullYear();
+    const m = now.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
+    return age;
+  };
+
 
   const handlePress = (item: typeof MENU[number]) => {
     if (item.route) {
@@ -85,7 +100,7 @@ export default function Account() {
           <View style={styles.avatarOuter}>
             <Image source={Images.logo2} style={styles.avatar} />
           </View>
-          <ThemedText style={styles.name}>A, 24</ThemedText>
+          <ThemedText style={styles.name}>{fullName ? fullName : 'A'}{birthdate ? `, ${computeAge(birthdate)}` : ''}</ThemedText>
         </View>
 
         <View style={styles.menu}>

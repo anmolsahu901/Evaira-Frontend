@@ -6,6 +6,8 @@ import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { Images } from '../constants/images';
 
+import { useUserProfile } from '../context/UserProfileContext';
+
 export default function CreateProfileScreen() {
   const [username, setUsername] = useState('');
   const [day, setDay] = useState('');
@@ -13,6 +15,7 @@ export default function CreateProfileScreen() {
   const [year, setYear] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { setBirthdate } = useUserProfile();
 
   const handleContinue = async () => {
     if (!username.trim()) {
@@ -33,6 +36,10 @@ export default function CreateProfileScreen() {
 
     setLoading(true);
     try {
+      // Save birthday to profile context (YYYY-MM-DD)
+      const iso = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      setBirthdate(iso);
+
       // TODO: send profile to API
       await new Promise((r) => setTimeout(r, 400));
       // Navigate to additional profile details page
@@ -40,7 +47,7 @@ export default function CreateProfileScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }; 
 
   return (
     <ThemedView style={styles.container} backgroundImage={Images.background}>

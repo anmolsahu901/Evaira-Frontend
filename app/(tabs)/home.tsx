@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import ProductCard, { Product } from '../../components/ui/product-card';
+import SwipeableCard from '../../components/ui/swipeable-card';
+import { sendLikeNotification } from '../../lib/api';
 
 const mockProducts: Product[] = [
   {
@@ -52,29 +55,136 @@ const mockProducts: Product[] = [
 
 export default function Home() {
   const [containerHeight, setContainerHeight] = useState(0);
+  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [swipedStack, setSwipedStack] = useState<Array<{ product: Product; direction: 'left' | 'right' }>>([]);
+  const undoTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) {
+        clearTimeout(undoTimerRef.current);
+        undoTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const scheduleClearUndo = () => {
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+    }
+    undoTimerRef.current = setTimeout(() => {
+      setSwipedStack([]);
+      undoTimerRef.current = null;
+    }, 5000) as unknown as number;
+  };
+
+  const handleSwipe = async (product: Product, direction: 'left' | 'right') => {
+    // push to undo stack
+    setSwipedStack(prev => [{ product, direction }, ...prev]);
+
+    // remove swiped product from the deck
+    setProducts(prev => prev.filter(p => p.id !== product.id));
+
+    if (direction === 'right') {
+      // mark liked remotely (best effort)
+      try {
+        const res = await sendLikeNotification({ productId: product.id, liked: true });
+        if (!res.ok) throw new Error('network');
+      } catch (e) {
+        Alert.alert('Error', 'Failed to send like to server.');
+        console.warn('Like API failed', e);
+      }
+    }
+
+    scheduleClearUndo();
+  };
+
+  const handleUndo = async () => {
+    if (swipedStack.length === 0) return;
+    const [last, ...rest] = swipedStack;
+    const { product, direction } = last;
+
+    // restore product to the front of the deck
+    setProducts(prev => [product, ...prev]);
+    setSwipedStack(rest);
+
+    if (direction === 'right') {
+      // revert the like on the server (best-effort)
+      try {
+        const res = await sendLikeNotification({ productId: product.id, liked: false });
+        if (!res.ok) throw new Error('network');
+      } catch (e) {
+        Alert.alert('Error', 'Failed to revert like on server.');
+        console.warn('Revert like failed', e);
+      }
+    }
+
+    if (rest.length === 0 && undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+  };
 
   const renderItem = ({ item }: { item: Product }) => (
     <View style={{ height: containerHeight }}>
-      <ProductCard product={item} />
+      <SwipeableCard onSwipe={(dir) => handleSwipe(item, dir)}>
+        <ProductCard product={item} />
+      </SwipeableCard>
     </View>
   );
 
   const onLayout = (event: LayoutChangeEvent) => {
     setContainerHeight(event.nativeEvent.layout.height);
-  };
+  }; 
+
+  // Inline SVG data URI for a curved-left arrow (encoded). This will render without requiring an external file.
+  const undoSvg = encodeURIComponent(`
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='46' height='46'>
+      <path d='M21 12H8' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/>
+      <path d='M10 19L3 12L10 5' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/>
+    </svg>
+  `);
+
+  const undoDataUri = `data:image/svg+xml;utf8,${undoSvg}`;
+  const [imageLoadError, setImageLoadError] = useState(false);
 
   return (
     <View style={styles.container} onLayout={onLayout}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+
+      {swipedStack.length > 0 && (
+        <View style={styles.undoContainer} pointerEvents="box-none">
+          <TouchableOpacity style={styles.undoButton} onPress={handleUndo} accessibilityLabel="Undo last swipe">
+            {/* try the inline SVG data URI first, fallback to Ionicons if it fails */}
+            {!imageLoadError ? (
+              <Image
+                source={{ uri: undoDataUri }}
+                style={styles.undoImage}
+                onError={() => setImageLoadError(true)}
+              />
+            ) : (
+              <Ionicons name="arrow-undo" size={28} color="white" />
+            )}
+            <Text style={styles.undoSubText}>{swipedStack[0].product.name}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {containerHeight > 0 && (
         <FlatList
-          data={mockProducts}
+          data={products}
           renderItem={renderItem}
           keyExtractor={item => item.id}
           pagingEnabled
           showsVerticalScrollIndicator={false}
           initialNumToRender={1}
           windowSize={3}
+          extraData={products}
+          ListEmptyComponent={() => (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: 'white', fontSize: 18 }}>No more products</Text>
+            </View>
+          )}
           getItemLayout={(_data, index) => ({
             length: containerHeight,
             offset: containerHeight * index,
@@ -90,5 +200,46 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  undoContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 40,
+    alignItems: 'center',
+    zIndex: 10,
+    paddingTop: 6,
+  },
+  undoButton: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 28,
+    alignItems: 'center',
+    minWidth: 140,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 6,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  undoImage: {
+    width: 38,
+    height: 38,
+    tintColor: 'white',
+    marginRight: 8,
+  },
+  undoText: {
+    color: 'white',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  undoSubText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 12,
+    marginTop: 2,
+    marginLeft: 6,
   },
 });

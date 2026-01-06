@@ -9,6 +9,8 @@ import { Images } from '../constants/images';
 const BODY_TYPES = ['Slim', 'Average', 'Athletic', 'Curvy', 'Other'];
 const GENDERS = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
 
+import { useUserProfile } from '../context/UserProfileContext';
+
 export default function ProfileDetailsScreen() {
   const router = useRouter();
   const [fullName, setFullName] = useState('');
@@ -18,6 +20,7 @@ export default function ProfileDetailsScreen() {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerOptions, setPickerOptions] = useState<string[]>([]);
   const [pickerSetter, setPickerSetter] = useState<(v: string) => void>(() => () => {});
+  const { setFullName: saveFullName } = useUserProfile();
 
   const openPicker = (options: string[], setter: (v: string) => void) => {
     setPickerOptions(options);
@@ -37,6 +40,9 @@ export default function ProfileDetailsScreen() {
 
     setLoading(true);
     try {
+      // Save the full name into profile context
+      saveFullName(fullName.trim());
+
       // TODO: Save profile details to API
       await new Promise((r) => setTimeout(r, 900));
       // Navigate to the occasion selection screen
@@ -47,7 +53,7 @@ export default function ProfileDetailsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }; 
 
   return (
     <ThemedView style={styles.container} backgroundImage={Images.background}>
