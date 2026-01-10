@@ -7,7 +7,6 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = Math.round(width * 0.64);
 const CARD_HEIGHT = 220;
 
-// Sample images per section — replace these arrays with API data when available
 const newArrivals = [
   'https://images.unsplash.com/photo-1514996937319-344454492b37?q=80&w=1200&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1520975667681-6d0e25f9c3c4?q=80&w=1200&auto=format&fit=crop',

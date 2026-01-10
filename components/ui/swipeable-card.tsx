@@ -2,6 +2,10 @@ import React, { useRef } from 'react';
 import { Animated, PanResponder, Dimensions, StyleSheet, View, Text } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const HORIZONTAL_SWIPE_MIN_DISTANCE = 15; // px - minimum horizontal movement before it's considered a swipe
+const HORIZONTAL_SWIPE_RATIO = 2.5; // horizontal movement must be at least 3x vertical movement
+const SWIPE_DISTANCE_THRESHOLD = SCREEN_WIDTH * 0.30; // fraction of screen width required to trigger swipe
+const SWIPE_VELOCITY_THRESHOLD = 0.6; // velocity threshold to trigger swipe
 
 interface Props {
   children: React.ReactNode;
@@ -32,27 +36,43 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+      // Don't claim the responder immediately on touch start; wait until movement clearly indicates a horizontal swipe.
+      onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_evt, gestureState) => {
-        // Prefer horizontal drags (avoid interfering with vertical paging)
-        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
+        // Prefer clear horizontal drags and require a minimum horizontal distance to avoid accidental swipes.
+        return (
+          Math.abs(gestureState.dx) > HORIZONTAL_SWIPE_RATIO * Math.abs(gestureState.dy) &&
+          Math.abs(gestureState.dx) > HORIZONTAL_SWIPE_MIN_DISTANCE
+        );
+      },
+      onPanResponderGrant: () => {
+        // Stop any running animations when gesture begins
+        translateX.stopAnimation();
+        translateY.stopAnimation();
       },
       onPanResponderMove: (_evt, gestureState) => {
         translateX.setValue(gestureState.dx);
         translateY.setValue(gestureState.dy);
       },
+      // Allow parent to take over if it requests termination (e.g., vertical ScrollView)
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderTerminate: () => {
+        // If the responder is taken by a parent, reset position
+        Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
+      },
       onPanResponderRelease: (_evt, gestureState) => {
         const { dx, vx } = gestureState;
-        const threshold = SCREEN_WIDTH * 0.25;
+        const threshold = SWIPE_DISTANCE_THRESHOLD;
 
-        if (dx > threshold || vx > 0.5) {
+        if (dx > threshold || vx > SWIPE_VELOCITY_THRESHOLD) {
           // swiped right
           Animated.timing(translateX, {
             toValue: SCREEN_WIDTH,
             duration: 180,
             useNativeDriver: true,
           }).start(() => onSwipe('right'));
-        } else if (dx < -threshold || vx < -0.5) {
+        } else if (dx < -threshold || vx < -SWIPE_VELOCITY_THRESHOLD) {
           // swiped left
           Animated.timing(translateX, {
             toValue: -SCREEN_WIDTH,
