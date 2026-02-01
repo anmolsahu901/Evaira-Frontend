@@ -1,95 +1,217 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { Images } from '../constants/images';
+import { sendOtp, verifyOtp } from '../lib/api';
+import { useUserProfile } from '../context/UserProfileContext';
 
 export default function LoginScreen() {
-  const [phoneOrEmail, setPhoneOrEmail] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [resending, setResending] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error' | null>(null);
   const router = useRouter();
+  const { setUserId, setEmail: setProfileEmail } = useUserProfile();
 
-  const handleContinue = async () => {
-    if (!phoneOrEmail) {
-      alert('Please enter phone number or email');
-      return;
-    }
-    if (!otp) {
-      alert('Please enter OTP');
+  const handleSendOtp = async () => {
+    if (!email.trim()) {
+      alert('Please enter a valid email');
       return;
     }
 
-    setLoading(true);
+    setSending(true);
     try {
-      // TODO: Replace with real verification logic
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      router.replace('/(tabs)/home');
-    } catch (error) {
-      alert('Error during verification. Please try again.');
-      console.error(error);
+      const res = await sendOtp(email);
+      if (res.ok) {
+        setOtpSent(true);
+        setMessage('OTP sent to your email');
+        setMessageType('success');
+      } else {
+        setMessage('Failed to send OTP. Please try again.');
+        setMessageType('error');
+      }
+    } catch (e) {
+      console.error(e);
+      setMessage('Failed to send OTP');
+      setMessageType('error');
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   };
 
   const handleResendOtp = async () => {
+    if (!email.trim()) {
+      alert('Please enter your email to resend OTP');
+      return;
+    }
     setResending(true);
     try {
-      // TODO: Trigger OTP resend via API
-      await new Promise(resolve => setTimeout(resolve, 800));
-      alert('OTP resent');
+      const res = await sendOtp(email);
+      if (res.ok) {
+        setMessage('OTP resent');
+        setMessageType('success');
+      } else {
+        setMessage('Failed to resend OTP');
+        setMessageType('error');
+      }
     } catch (e) {
-      alert('Failed to resend OTP');
+      console.error(e);
+      setMessage('Failed to resend OTP');
+      setMessageType('error');
     } finally {
       setResending(false);
     }
   };
 
-  const handleSignUp = () => {
-    router.push('/createProfile' as any);
+  const handleContinue = async () => {
+    if (!otpSent) {
+      setMessage('Please request an OTP first');
+      setMessageType('error');
+      return;
+    }
+    if (!otp.trim()) {
+      setMessage('Please enter the OTP');
+      setMessageType('error');
+      return;
+    }
+
+    setVerifying(true);
+    try {
+      const res = await verifyOtp(email, otp);
+      if (res.ok) {
+        // If backend returns auth payload, use it
+        const auth = res.data;
+        const token = auth?.token;
+        const isNew = !!auth?.isNew;
+        const userId = auth?.userId ?? null;
+        const userEmail = auth?.email ?? null;
+
+        try {
+          if (token && typeof SecureStore?.setItemAsync === 'function') {
+            await SecureStore.setItemAsync('authToken', String(token));
+          }
+        } catch (sErr) {
+          console.warn('Could not store token', sErr);
+        }
+
+        // Save user id and email in context for later use
+        try {
+          if (userId != null) setUserId(Number(userId));
+          if (userEmail != null) setProfileEmail(String(userEmail));
+        } catch (ctxErr) {
+          console.warn('Could not set user profile in context', ctxErr);
+        }
+
+        setMessage('');
+        setMessageType(null);
+
+        if (isNew) {
+          // New user: go to profile creation
+          router.push('/createProfile' as any);
+        } else {
+          // Existing user: go to home
+          router.replace('/(tabs)/home');
+        }
+      } else {
+        setMessage('Invalid OTP. Please try again.');
+        setMessageType('error');
+      }
+    } catch (e) {
+      console.error(e);
+      setMessage('Error verifying OTP');
+      setMessageType('error');
+    } finally {
+      setVerifying(false);
+    }
   };
 
+  const handleSignUp = () => {
+    router.push('/createProfile' as any);
+  }; 
+
   return (
-    <ThemedView style={styles.container} backgroundImage={Images.background}>
+    <ThemedView style={styles.container} >
+      <View style={styles.topBar}>
+        <ThemedText style={styles.topBarText}>Evaira</ThemedText>
+      </View>
+
       <Image source={Images.logo} style={styles.logo} />
 
       <TextInput
         style={styles.input}
-        placeholder="Enter Phone Number or Email"
+        placeholder="Enter your email"
         placeholderTextColor="#666"
-        keyboardType="default"
-        value={phoneOrEmail}
-        onChangeText={setPhoneOrEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        value={email}
+        onChangeText={(value) => {
+          setEmail(value);
+          if (otpSent) {
+            setOtpSent(false);
+            setMessage('');
+            setMessageType(null);
+            setOtp('');
+          }
+        }}
       />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Enter OTP"
-        placeholderTextColor="#666"
-        keyboardType="numeric"
-        value={otp}
-        onChangeText={setOtp}
-      />
+      {message ? (
+        <ThemedText style={[styles.messageText, messageType === 'error' ? styles.messageError : styles.messageSuccess]}>
+          {message}
+        </ThemedText>
+      ) : null}
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleContinue}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <ThemedText style={styles.buttonText}>Continue</ThemedText>
-        )}
-      </TouchableOpacity>
+      {!otpSent && (
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleSendOtp}
+          disabled={sending}
+        >
+          {sending ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <ThemedText style={styles.buttonText}>Send OTP</ThemedText>
+          )}
+        </TouchableOpacity>
+      )} 
 
-      <TouchableOpacity onPress={handleResendOtp} style={styles.resendWrapper}>
-        <ThemedText style={styles.resendText}>{resending ? 'Resending...' : 'Resend OTP'}</ThemedText>
-      </TouchableOpacity>
+      {otpSent && (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter OTP"
+            placeholderTextColor="#666"
+            keyboardType="numeric"
+            value={otp}
+            onChangeText={setOtp}
+          />
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleContinue}
+            disabled={verifying}
+          >
+            {verifying ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <ThemedText style={styles.buttonText}>Continue</ThemedText>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleResendOtp} style={styles.resendWrapper}>
+            <ThemedText style={styles.resendText}>{resending ? 'Resending...' : 'Resend OTP'}</ThemedText>
+          </TouchableOpacity>
+        </>
+      )}
+
 
       <TouchableOpacity onPress={handleSignUp} style={styles.signUpWrapper}>
         <ThemedText style={styles.signUpText}>Don't have an account? Sign Up</ThemedText>
@@ -135,6 +257,35 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 20,
+  },
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: -24,
+    right: -24,
+    height: 84,
+    backgroundColor: '#263238',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    paddingTop: 18,
+  },
+  topBarText: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: '600',
+  },
+  messageText: {
+    fontSize: 14,
+    marginTop: 8,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  messageSuccess: {
+    color: 'green',
+  },
+  messageError: {
+    color: 'red',
   },
   resendWrapper: {
     marginTop: 8,

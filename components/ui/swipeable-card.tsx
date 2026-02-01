@@ -3,7 +3,7 @@ import { Animated, PanResponder, Dimensions, StyleSheet, View, Text } from 'reac
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const HORIZONTAL_SWIPE_MIN_DISTANCE = 15; // px - minimum horizontal movement before it's considered a swipe
-const HORIZONTAL_SWIPE_RATIO = 2.5; // horizontal movement must be at least 3x vertical movement
+const HORIZONTAL_SWIPE_RATIO = 2.5; // horizontal movement must be at least 2.5x vertical movement
 const SWIPE_DISTANCE_THRESHOLD = SCREEN_WIDTH * 0.30; // fraction of screen width required to trigger swipe
 const SWIPE_VELOCITY_THRESHOLD = 0.6; // velocity threshold to trigger swipe
 
@@ -23,13 +23,13 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
   });
 
   const likeOpacity = translateX.interpolate({
-    inputRange: [0, SCREEN_WIDTH / 3],
+    inputRange: [0, SWIPE_DISTANCE_THRESHOLD],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
 
   const nopeOpacity = translateX.interpolate({
-    inputRange: [-SCREEN_WIDTH / 3, 0],
+    inputRange: [-SWIPE_DISTANCE_THRESHOLD, 0],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
@@ -66,19 +66,37 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
         const threshold = SWIPE_DISTANCE_THRESHOLD;
 
         if (dx > threshold || vx > SWIPE_VELOCITY_THRESHOLD) {
-          // swiped right
-          Animated.timing(translateX, {
-            toValue: SCREEN_WIDTH,
-            duration: 180,
-            useNativeDriver: true,
-          }).start(() => onSwipe('right'));
+          // swiped right — spring offscreen for a smooth finish
+          Animated.parallel([
+            Animated.spring(translateX, {
+              toValue: SCREEN_WIDTH * 1.2,
+              useNativeDriver: true,
+              speed: 20,
+              bounciness: 0,
+            }),
+            Animated.spring(translateY, {
+              toValue: 0,
+              useNativeDriver: true,
+              speed: 20,
+              bounciness: 0,
+            }),
+          ]).start(() => onSwipe('right'));
         } else if (dx < -threshold || vx < -SWIPE_VELOCITY_THRESHOLD) {
           // swiped left
-          Animated.timing(translateX, {
-            toValue: -SCREEN_WIDTH,
-            duration: 180,
-            useNativeDriver: true,
-          }).start(() => onSwipe('left'));
+          Animated.parallel([
+            Animated.spring(translateX, {
+              toValue: -SCREEN_WIDTH * 1.2,
+              useNativeDriver: true,
+              speed: 20,
+              bounciness: 0,
+            }),
+            Animated.spring(translateY, {
+              toValue: 0,
+              useNativeDriver: true,
+              speed: 20,
+              bounciness: 0,
+            }),
+          ]).start(() => onSwipe('left'));
         } else {
           Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
           Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
