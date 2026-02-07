@@ -4,6 +4,12 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { UserProfileProvider } from '../context/UserProfileContext';
 
+// Force real API calls during development when needed. Set this to true to bypass dev mocks.
+if (typeof __DEV__ !== 'undefined' && __DEV__) {
+  ;(global as any).__FORCE_API_CALL__ = true;
+  console.log('[startup] __FORCE_API_CALL__ = true (dev)');
+} 
+
 export const unstable_settings = {
   initialRouteName: 'splash',
 };

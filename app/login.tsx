@@ -19,7 +19,7 @@ export default function LoginScreen() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | null>(null);
   const router = useRouter();
-  const { setUserId, setEmail: setProfileEmail } = useUserProfile();
+  const {  setAuthToken } = useUserProfile();
 
   const handleSendOtp = async () => {
     if (!email.trim()) {
@@ -83,14 +83,22 @@ export default function LoginScreen() {
       return;
     }
 
+    console.log(`Attempting to verify OTP for email: ${email} with OTP: ${otp}`);
     setVerifying(true);
     try {
       const res = await verifyOtp(email, otp);
       if (res.ok) {
         // If backend returns auth payload, use it
         const auth = res.data;
+        console.log('verifyOtp response', res);
+        console.log('auth payload:', auth);
+
         const token = auth?.token;
-        const isNew = !!auth?.isNew;
+        // Backend might name the new-user flag `isNew` or `isNewUser` (or other variants).
+        // Accept boolean/string/number representations to be robust against backend typing.
+        const rawIsNew = auth?.isNew ?? auth?.isNewUser ?? auth?.newUser ?? null;
+        if (rawIsNew == null) console.warn('verifyOtp: no new-user flag in auth payload, available keys:', Object.keys(auth || {}));
+        const isNew = rawIsNew === true || rawIsNew === 'true' || rawIsNew === 1 || rawIsNew === '1';
         const userId = auth?.userId ?? null;
         const userEmail = auth?.email ?? null;
 
@@ -98,24 +106,26 @@ export default function LoginScreen() {
           if (token && typeof SecureStore?.setItemAsync === 'function') {
             await SecureStore.setItemAsync('authToken', String(token));
           }
+          // Also store token in context so downstream screens can use it
+          if (token) setAuthToken(String(token));
         } catch (sErr) {
           console.warn('Could not store token', sErr);
         }
 
         // Save user id and email in context for later use
-        try {
-          if (userId != null) setUserId(Number(userId));
-          if (userEmail != null) setProfileEmail(String(userEmail));
-        } catch (ctxErr) {
-          console.warn('Could not set user profile in context', ctxErr);
-        }
+        // try {
+        //   if (userId != null) setUserId(Number(userId));
+        //   if (userEmail != null) setProfileEmail(String(userEmail));
+        // } catch (ctxErr) {
+        //   console.warn('Could not set user profile in context', ctxErr);
+        // }
 
         setMessage('');
         setMessageType(null);
 
         if (isNew) {
-          // New user: go to profile creation
-          router.push('/createProfile' as any);
+          // New user: go to profile creation (use replace so user can't go back to login)
+          router.replace('/createProfile' as any);
         } else {
           // Existing user: go to home
           router.replace('/(tabs)/home');

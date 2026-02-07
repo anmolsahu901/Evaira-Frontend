@@ -5,6 +5,7 @@ import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { Images } from '../constants/images';
+import { useUserProfile } from '../context/UserProfileContext';
 
 const OPTIONS = [
   'Party & Clubwear',
@@ -18,6 +19,7 @@ const OPTIONS = [
 export default function OccasionsScreen() {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
+  const { setPreferredOccasions } = useUserProfile();
 
   const toggle = (item: string) => {
     if (selected.includes(item)) {
@@ -32,8 +34,9 @@ export default function OccasionsScreen() {
   };
 
   const handleContinue = () => {
-    // TODO: Save preferences
-    router.replace('/(tabs)/home');
+    // Save occasions to context and navigate to favorite colors
+    setPreferredOccasions(selected);
+    router.push('/favoriteColors');
   };
 
   return (

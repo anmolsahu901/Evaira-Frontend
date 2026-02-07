@@ -5,22 +5,25 @@ import { ActivityIndicator, FlatList, Modal, StyleSheet, TextInput, TouchableOpa
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { Images } from '../constants/images';
-
-const BODY_TYPES = ['Slim', 'Average', 'Athletic', 'Curvy', 'Other'];
-const GENDERS = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
-
 import { useUserProfile } from '../context/UserProfileContext';
+
+const GENDERS = ['Female', 'Male', 'Non-binary', 'Prefer not to say'];
+const FACE_SHAPES = ['Round', 'Square', 'Oval', 'Heart', 'Diamond', 'Oblong', 'Triangle', 'Pear'];
+const MALE_BODY_TYPES = ['Slim', 'Average', 'Athletic', 'Muscular', 'Stocky', 'Other'];
+const FEMALE_BODY_TYPES = ['Slim', 'Average', 'Athletic', 'Curvy', 'Pear-shaped', 'Other'];
+const NEUTRAL_BODY_TYPES = ['Slim', 'Average', 'Athletic', 'Curvy', 'Muscular', 'Other'];
 
 export default function ProfileDetailsScreen() {
   const router = useRouter();
-  const [fullName, setFullName] = useState('');
+  const [faceShape, setFaceShape] = useState<string | null>(null);
   const [bodyType, setBodyType] = useState<string | null>(null);
   const [gender, setGender] = useState<string | null>(null);
+  const [location, setLocationInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerOptions, setPickerOptions] = useState<string[]>([]);
   const [pickerSetter, setPickerSetter] = useState<(v: string) => void>(() => () => {});
-  const { setFullName: saveFullName } = useUserProfile();
+  const { setGender: saveGender, setFaceShape: saveFaceShape, setBodyType: saveBodyType, setLocation: saveLocation } = useUserProfile();
 
   const openPicker = (options: string[], setter: (v: string) => void) => {
     setPickerOptions(options);
@@ -28,22 +31,36 @@ export default function ProfileDetailsScreen() {
     setPickerVisible(true);
   };
 
+  const getBodyTypeOptions = () => {
+    switch (gender) {
+      case 'Male':
+        return MALE_BODY_TYPES;
+      case 'Female':
+        return FEMALE_BODY_TYPES;
+      default:
+        return NEUTRAL_BODY_TYPES;
+    }
+  };
+
   const handleContinue = async () => {
-    if (!fullName.trim()) {
-      alert('Please enter your full name');
+    if (!faceShape || !bodyType || !gender) {
+      alert('Please select face shape, body type and gender');
       return;
     }
-    if (!bodyType || !gender) {
-      alert('Please select body type and gender');
+
+    if (!location.trim()) {
+      alert('Please enter your location');
       return;
     }
 
     setLoading(true);
     try {
-      // Save the full name into profile context
-      saveFullName(fullName.trim());
-
-      // TODO: Save profile details to API
+      // Save profile details to context
+      saveGender(gender);
+      saveFaceShape(faceShape);
+      saveBodyType(bodyType);
+      saveLocation(location.trim());
+      
       await new Promise((r) => setTimeout(r, 900));
       // Navigate to the occasion selection screen
       router.push('/occasions');
@@ -56,29 +73,34 @@ export default function ProfileDetailsScreen() {
   }; 
 
   return (
-    <ThemedView style={styles.container} backgroundImage={Images.background}>
+    <ThemedView style={styles.container} >
       <View style={styles.topBar}>
         <ThemedText style={styles.topBarText}>Evaira</ThemedText>
       </View>
 
       <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder="Your full name"
-          placeholderTextColor="#444"
-          value={fullName}
-          onChangeText={setFullName}
-        />
-
-        <TouchableOpacity style={styles.input} onPress={() => openPicker(BODY_TYPES, (v) => setBodyType(v))}>
-          <ThemedText style={styles.selectText}>{bodyType ?? 'Select your body type'}</ThemedText>
-          <ThemedText style={styles.chev}>▼</ThemedText>
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.input} onPress={() => openPicker(GENDERS, (v) => setGender(v))}>
           <ThemedText style={styles.selectText}>{gender ?? 'Select your gender'}</ThemedText>
           <ThemedText style={styles.chev}>▼</ThemedText>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.input} onPress={() => openPicker(FACE_SHAPES, (v) => setFaceShape(v))}>
+          <ThemedText style={styles.selectText}>{faceShape ?? 'Select your face shape'}</ThemedText>
+          <ThemedText style={styles.chev}>▼</ThemedText>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.input} onPress={() => gender ? openPicker(getBodyTypeOptions(), (v) => setBodyType(v)) : alert('Please select your gender first')} disabled={!gender}>
+          <ThemedText style={styles.selectText}>{bodyType ?? 'Select your body type'}</ThemedText>
+          <ThemedText style={styles.chev}>▼</ThemedText>
+        </TouchableOpacity>
+
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your location (e.g., Pune)"
+          placeholderTextColor="#444"
+          value={location}
+          onChangeText={setLocationInput}
+        />
 
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={loading}>
           {loading ? (
@@ -134,7 +156,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#263238',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
+    zIndex: 10, 
     paddingTop: 18,
   },
   topBarText: {

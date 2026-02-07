@@ -1,20 +1,48 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { Images } from '../constants/images';
+import { useUserProfile } from '../context/UserProfileContext';
 
 export default function SplashScreen() {
   const router = useRouter();
+  const { setAuthToken } = useUserProfile();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace('/home' as any);
-    }, 3000); // 3 seconds
+    const checkPersistentAuth = async () => {
+      try {
+        // ===== PERSISTENT AUTH CHECK - START =====
+        // This functionality allows users to stay logged in between app sessions
+        // To disable this (e.g., for UI updates or testing), comment out lines marked with [PERSIST_AUTH]
+        
+        const token = await SecureStore.getItemAsync('authToken'); // [PERSIST_AUTH]
+        
+        if (token) { // [PERSIST_AUTH]
+          // Token found → User was previously logged in
+          setAuthToken(token); // [PERSIST_AUTH]
+          // Skip login screen and go directly to home
+          router.replace('/(tabs)/home'); // [PERSIST_AUTH]
+        } else { // [PERSIST_AUTH]
+          // No token → User needs to login
+          router.replace('/login'); // [PERSIST_AUTH]
+        } // [PERSIST_AUTH]
+        
+        // ===== PERSISTENT AUTH CHECK - END =====
+      } catch (error) {
+        console.error('Error checking persistent auth:', error);
+        // On error, default to login screen for safety
+        router.replace('/login');
+      }
+    };
+
+    // Call auth check after splash animation delay (3 seconds)
+    const timer = setTimeout(checkPersistentAuth, 3000);
 
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [router, setAuthToken]);
 
   return (
 

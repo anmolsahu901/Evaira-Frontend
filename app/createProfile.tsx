@@ -9,40 +9,35 @@ import { Images } from '../constants/images';
 import { useUserProfile } from '../context/UserProfileContext';
 
 export default function CreateProfileScreen() {
-  const [username, setUsername] = useState('');
-  const [day, setDay] = useState('');
-  const [month, setMonth] = useState('');
-  const [year, setYear] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [ageInput, setAgeInput] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { setBirthdate } = useUserProfile();
+  const { setName, setAge } = useUserProfile();
 
   const handleContinue = async () => {
-    if (!username.trim()) {
-      alert('Please enter your username');
+    if (!nameInput.trim()) {
+      alert('Please enter your name');
       return;
     }
 
-    if (!day || !month || !year) {
-      alert('Please enter your birthday (day, month, year)');
+    if (!ageInput.trim()) {
+      alert('Please enter your age');
       return;
     }
 
-    // Basic numeric validation
-    if (isNaN(Number(day)) || isNaN(Number(month)) || isNaN(Number(year))) {
-      alert('Birthday fields must be numbers');
+    const age = parseInt(ageInput);
+    if (isNaN(age) || age < 13 || age > 120) {
+      alert('Please enter a valid age (13-120)');
       return;
     }
 
     setLoading(true);
     try {
-      // Save birthday to profile context (YYYY-MM-DD)
-      const iso = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      setBirthdate(iso);
+      setName(nameInput.trim());
+      setAge(age);
 
-      // TODO: send profile to API
       await new Promise((r) => setTimeout(r, 400));
-      // Navigate to additional profile details page
       router.push('/profileDetails');
     } finally {
       setLoading(false);
@@ -50,7 +45,7 @@ export default function CreateProfileScreen() {
   }; 
 
   return (
-    <ThemedView style={styles.container} backgroundImage={Images.background}>
+    <ThemedView style={styles.container} >
       <View style={styles.topBar}>
         <ThemedText style={styles.topBarText}>Evaira</ThemedText>
       </View>
@@ -59,46 +54,23 @@ export default function CreateProfileScreen() {
 
       <TextInput
         style={styles.usernameInput}
-        placeholder="Your username"
+        placeholder="Your full name"
         placeholderTextColor="#444"
-        value={username}
-        onChangeText={setUsername}
+        value={nameInput}
+        onChangeText={setNameInput}
       />
 
       <View style={styles.birthdayWrapper}>
-        <ThemedText style={styles.birthdayLabel}>Your birthday</ThemedText>
-
-        <View style={styles.birthdayRow}>
-          <TextInput
-            style={styles.bdayInput}
-            placeholder="Day"
-            placeholderTextColor="#444"
-            keyboardType="numeric"
-            value={day}
-            onChangeText={setDay}
-            maxLength={2}
-          />
-
-          <TextInput
-            style={styles.bdayInput}
-            placeholder="Month"
-            placeholderTextColor="#444"
-            keyboardType="numeric"
-            value={month}
-            onChangeText={setMonth}
-            maxLength={2}
-          />
-
-          <TextInput
-            style={styles.bdayInput}
-            placeholder="Year"
-            placeholderTextColor="#444"
-            keyboardType="numeric"
-            value={year}
-            onChangeText={setYear}
-            maxLength={4}
-          />
-        </View>
+        <ThemedText style={styles.birthdayLabel}>Your age</ThemedText>
+        <TextInput
+          style={styles.bdayInput}
+          placeholder="Age"
+          placeholderTextColor="#444"
+          keyboardType="numeric"
+          value={ageInput}
+          onChangeText={setAgeInput}
+          maxLength={3}
+        />
       </View>
 
       <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={loading}>
@@ -110,6 +82,10 @@ export default function CreateProfileScreen() {
             <ThemedText style={styles.arrow}>→</ThemedText>
           )}
         </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.skipWrapper} onPress={() => router.replace('/(tabs)/home')}>
+        <ThemedText style={styles.skipText}>Skip for now</ThemedText>
       </TouchableOpacity>
     </ThemedView>
   );
@@ -189,6 +165,13 @@ const styles = StyleSheet.create({
   },
   spinner: {
     marginLeft: 8,
+  },
+  skipWrapper: {
+    marginTop: 12,
+  },
+  skipText: {
+    fontSize: 16,
+    color: '#111',
   },
   topBar: {
     position: 'absolute',
