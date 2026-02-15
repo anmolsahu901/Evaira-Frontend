@@ -40,10 +40,11 @@ function MenuItem({ item, onPress, textColor, iconColor, borderColor, chevColor,
 }
 
 import { useUserProfile } from '../../context/UserProfileContext';
+import * as SecureStore from 'expo-secure-store';
 
 export default function Account() {
   const router = useRouter();
-  const { fullName, birthdate } = useUserProfile();
+  const { fullName, birthdate, resetProfile } = useUserProfile();
 
   const textColor = useThemeColor({}, 'text');
   const iconColor = useThemeColor({}, 'icon');
@@ -73,7 +74,24 @@ export default function Account() {
     if (item.key === 'logout') {
       Alert.alert('Log out', 'Are you sure you want to log out?', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Log out', style: 'destructive', onPress: () => router.replace('/login') },
+        {
+          text: 'Log out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Clear token from secure storage
+              await SecureStore.deleteItemAsync('authToken');
+              // Reset user profile context
+              resetProfile();
+              console.log('✅ User logged out successfully');
+              // Redirect to login screen
+              router.replace('/login');
+            } catch (error) {
+              console.error('Error during logout:', error);
+              Alert.alert('Error', 'Failed to log out. Please try again.');
+            }
+          },
+        },
       ]);
       return;
     }

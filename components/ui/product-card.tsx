@@ -17,9 +17,9 @@ export interface Product {
   description: string;
   imageUrl: string;
   likes: number;
-  comments: string;
   shares: string;
   bookmarks: string;
+  deeplinkUrl?: string; // URL to open when user swipes right
 }
 
 interface ProductCardProps {
@@ -49,7 +49,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     setLikeCount(c => c + delta);
 
     try {
-      const res = await sendLikeNotification({ productId: product.id, liked: !liked });
+      const actionType = liked ? 'UNLIKE' : 'LIKE';
+      const res = await sendLikeNotification({ productId: Number(product.id), actionType });
       if (!res.ok) throw new Error('network');
     } catch (e) {
       // revert on error
@@ -86,12 +87,15 @@ export default function ProductCard({ product }: ProductCardProps) {
               <Text style={styles.iconText}>{formatCount(likeCount)}</Text>
             </TouchableOpacity>
 
+            {/* Comments UI temporarily disabled. Re-enable later if needed. */}
+            {/**
             <TouchableOpacity style={styles.iconContainer}>
               <View style={styles.iconCircle}>
                 <Ionicons name="chatbubble-outline" size={26} color="white" />
               </View>
               <Text style={styles.iconText}>{product.comments}</Text>
             </TouchableOpacity>
+            */}
 
             <TouchableOpacity style={styles.iconContainer}>
               <View style={styles.iconCircle}>

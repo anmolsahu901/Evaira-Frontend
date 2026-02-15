@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image } from 'react-native';
+import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProductCard, { Product } from '../../components/ui/product-card';
 import SwipeableCard from '../../components/ui/swipeable-card';
-import { sendLikeNotification } from '../../lib/api';
+import { sendLikeNotification, getProducts } from '../../lib/api';
 
 const mockProducts: Product[] = [
   {
@@ -13,7 +13,6 @@ const mockProducts: Product[] = [
     description: 'Elegant floor-length gown, perfect for parties. Available in multiple colors.',
     imageUrl: 'https://images.unsplash.com/photo-1533659828870-95ee305cee3e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 1200000,
-    comments: '4.5K',
     shares: '10K',
     bookmarks: '5K',
   },
@@ -24,7 +23,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -35,7 +33,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -46,7 +43,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -57,7 +53,6 @@ const mockProducts: Product[] = [
     description: 'Elegant floor-length gown, perfect for parties. Available in multiple colors.',
     imageUrl: 'https://images.unsplash.com/photo-1533659828870-95ee305cee3e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 1200000,
-    comments: '4.5K',
     shares: '10K',
     bookmarks: '5K',
   },
@@ -68,7 +63,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -79,7 +73,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -90,7 +83,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -101,7 +93,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -112,7 +103,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -123,7 +113,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -134,7 +123,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -145,7 +133,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -156,7 +143,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -167,7 +153,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -178,7 +163,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -189,7 +173,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -200,7 +183,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -211,7 +193,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -222,7 +203,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -233,7 +213,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -244,7 +223,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -255,7 +233,6 @@ const mockProducts: Product[] = [
     description: 'Another beautiful gown.',
     imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     likes: 800000,
-    comments: '2.1K',
     shares: '5K',
     bookmarks: '1.2K',
   },
@@ -264,9 +241,35 @@ const mockProducts: Product[] = [
 
 export default function Home() {
   const [containerHeight, setContainerHeight] = useState(0);
-  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [swipedStack, setSwipedStack] = useState<Array<{ product: Product; direction: 'left' | 'right' }>>([]);
   const undoTimerRef = useRef<number | null>(null);
+
+  // Fetch products from API on component mount
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const result = await getProducts();
+        if (result.ok && result.data) {
+          setProducts(result.data);
+        } else {
+          console.error('Failed to fetch products:', result.data);
+          // Fallback to mock products on error
+          setProducts(mockProducts);
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        // Fallback to mock products on error
+        setProducts(mockProducts);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -297,11 +300,26 @@ export default function Home() {
     if (direction === 'right') {
       // mark liked remotely (best effort)
       try {
-        const res = await sendLikeNotification({ productId: product.id, liked: true });
+        const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'LIKE' });
         if (!res.ok) throw new Error('network');
       } catch (e) {
         Alert.alert('Error', 'Failed to send like to server.');
         console.warn('Like API failed', e);
+      }
+
+      // 🔗 Open deeplink if available
+      if (product.deeplinkUrl) {
+        try {
+          const canOpen = await Linking.canOpenURL(product.deeplinkUrl);
+          if (canOpen) {
+            await Linking.openURL(product.deeplinkUrl);
+            console.log('Deeplink opened:', product.deeplinkUrl);
+          } else {
+            console.warn('Cannot open deeplink:', product.deeplinkUrl);
+          }
+        } catch (error) {
+          console.error('Error opening deeplink:', error);
+        }
       }
     }
 
@@ -320,7 +338,7 @@ export default function Home() {
     if (direction === 'right') {
       // revert the like on the server (best-effort)
       try {
-        const res = await sendLikeNotification({ productId: product.id, liked: false });
+        const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'UNLIKE' });
         if (!res.ok) throw new Error('network');
       } catch (e) {
         Alert.alert('Error', 'Failed to revert like on server.');

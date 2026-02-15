@@ -6,6 +6,7 @@ import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { Images } from '../constants/images';
 import { useUserProfile } from '../context/UserProfileContext';
+import { validateToken } from '../lib/api';
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -22,11 +23,24 @@ export default function SplashScreen() {
         
         if (token) { // [PERSIST_AUTH]
           // Token found → User was previously logged in
-          setAuthToken(token); // [PERSIST_AUTH]
-          // Skip login screen and go directly to home
-          router.replace('/(tabs)/home'); // [PERSIST_AUTH]
+          // Now validate if the token is still valid (not expired)
+          console.log('Token found. Validating token...');
+          const isTokenValid = await validateToken();
+          
+          if (isTokenValid) {
+            // ✅ Token is valid
+            setAuthToken(token); // [PERSIST_AUTH]
+            console.log('Token validation successful. Navigating to home.');
+            router.replace('/(tabs)/home'); // [PERSIST_AUTH]
+          } else {
+            // ❌ Token is expired (401) - clear it and send to login
+            console.warn('Token has expired. Clearing token and redirecting to login.');
+            await SecureStore.deleteItemAsync('authToken');
+            router.replace('/login'); // [PERSIST_AUTH]
+          }
         } else { // [PERSIST_AUTH]
           // No token → User needs to login
+          console.log('No token found. Redirecting to login.');
           router.replace('/login'); // [PERSIST_AUTH]
         } // [PERSIST_AUTH]
         

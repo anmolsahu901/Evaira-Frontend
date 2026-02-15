@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
 
 export type UserProfile = {
   name: string | null;
@@ -24,6 +25,7 @@ type UserProfileContextType = UserProfile & {
   setAuthToken: (token: string | null) => void;
   resetProfile: () => void;
   getProfileData: () => UserProfile;
+  logout: () => Promise<void>;
 };
 
 const UserProfileContext = createContext<UserProfileContextType | undefined>(undefined);
@@ -63,6 +65,19 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     authToken,
   });
 
+  const logout = async () => {
+    try {
+      // Clear secure storage
+      await SecureStore.deleteItemAsync('authToken');
+      // Reset context
+      resetProfile();
+      console.log('✅ Logout completed');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      throw error;
+    }
+  };
+
   return (
     <UserProfileContext.Provider
       value={{
@@ -86,6 +101,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setAuthToken,
         resetProfile,
         getProfileData,
+        logout,
       }}
     >
       {children}

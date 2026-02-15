@@ -26,7 +26,7 @@ export const submitUserProfile = async (
 
     console.log('Submitting profile:', payload);
 
-    const response = await fetch(`${BASE_URL}/api/auth/profile`, {
+    const response = await fetch(`${BASE_URL}/api/profile/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
