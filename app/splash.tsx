@@ -27,14 +27,15 @@ export default function SplashScreen() {
           console.log('Token found. Validating token...');
           const isTokenValid = await validateToken();
           
-          if (isTokenValid) {
+        if (isTokenValid) {
             // ✅ Token is valid
             setAuthToken(token); // [PERSIST_AUTH]
-            console.log('Token validation successful. Navigating to home.');
+
+            console.log('✅ Token validation successful. Token is valid. Navigating to home.');
             router.replace('/(tabs)/home'); // [PERSIST_AUTH]
           } else {
-            // ❌ Token is expired (401) - clear it and send to login
-            console.warn('Token has expired. Clearing token and redirecting to login.');
+            // ❌ Token is expired (401) or validation failed - clear it and send to login
+            console.warn('❌ Token validation failed. Clearing token and redirecting to login.');
             await SecureStore.deleteItemAsync('authToken');
             router.replace('/login'); // [PERSIST_AUTH]
           }
@@ -50,7 +51,11 @@ export default function SplashScreen() {
         // On error, default to login screen for safety
         router.replace('/login');
       }
+
+      //  router.replace('/login');
     };
+
+     
 
     // Call auth check after splash animation delay (3 seconds)
     const timer = setTimeout(checkPersistentAuth, 3000);

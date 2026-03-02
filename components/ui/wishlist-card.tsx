@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export type WishlistItem = {
-  id: string;
+  id: string | number;
   brand: string;
   name?: string;
   price: string;
@@ -11,15 +11,38 @@ export type WishlistItem = {
   imageUrl: string;
   rating?: number;
   reviews?: number;
+  deeplinkUrl?: string;
 };
 
 type Props = {
   item: WishlistItem;
-  onRemove?: (id: string) => void;
+  onRemove?: (productId: string | number) => void | Promise<void>;
   onMoveToBag?: (id: string) => void;
 };
 
 export default function WishlistCard({ item, onRemove, onMoveToBag }: Props) {
+  const handleOpenDeeplink = async () => {
+    if (!item.deeplinkUrl) {
+      Alert.alert('Error', 'Product URL is not available');
+      console.warn('[WishlistCard] deeplinkUrl is missing for item:', item.id);
+      return;
+    }
+
+    try {
+      const canOpen = await Linking.canOpenURL(item.deeplinkUrl);
+      if (canOpen) {
+        console.log('[WishlistCard] Opening deeplink:', item.deeplinkUrl);
+        await Linking.openURL(item.deeplinkUrl);
+      } else {
+        Alert.alert('Error', 'Unable to open product link');
+        console.warn('[WishlistCard] Cannot open URL:', item.deeplinkUrl);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open product link');
+      console.error('[WishlistCard] Error opening deeplink:', error);
+    }
+  };
+
   return (
     <View style={styles.card}>
       <Image source={{ uri: item.imageUrl }} style={styles.image} />
@@ -44,7 +67,7 @@ export default function WishlistCard({ item, onRemove, onMoveToBag }: Props) {
           {item.oldPrice ? <Text style={styles.oldPrice}>{item.oldPrice}</Text> : null}
         </View>
 
-        <TouchableOpacity style={styles.moveBtn} onPress={() => onMoveToBag?.(item.id)}>
+        <TouchableOpacity style={styles.moveBtn} onPress={handleOpenDeeplink}>
           <Text style={styles.moveText}>CLICK TO OPEN</Text>
         </TouchableOpacity>
       </View>

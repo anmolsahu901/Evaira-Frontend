@@ -3,7 +3,8 @@ import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, 
 import { Ionicons } from '@expo/vector-icons';
 import ProductCard, { Product } from '../../components/ui/product-card';
 import SwipeableCard from '../../components/ui/swipeable-card';
-import { sendLikeNotification, getProducts } from '../../lib/api';
+import { sendLikeNotification, getProducts, dislikeProduct } from '../../lib/api';
+import { useWishlist } from '../../context/WishlistContext';
 
 const mockProducts: Product[] = [
   {
@@ -35,211 +36,12 @@ const mockProducts: Product[] = [
     likes: 800000,
     shares: '5K',
     bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product3',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'silk-evening-gown1',
-    name: 'Silk Evening Gown',
-    price: '$499.00',
-    description: 'Elegant floor-length gown, perfect for parties. Available in multiple colors.',
-    imageUrl: 'https://images.unsplash.com/photo-1533659828870-95ee305cee3e?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 1200000,
-    shares: '10K',
-    bookmarks: '5K',
-  },
-  {
-    id: 'another-product4',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product5',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product6',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product7',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product8',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product9',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product10',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product11',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product12',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-   {
-    id: 'another-product13',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product14',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product15',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product16',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product17',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product18',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product19',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product20',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?q=80&w=669&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
-  {
-    id: 'another-product21',
-    name: 'Another Gown',
-    price: '$299.00',
-    description: 'Another beautiful gown.',
-    imageUrl: 'https://images.unsplash.com/photo-1611312449412-6cefac5dc3e4?q=80&w=1984&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    likes: 800000,
-    shares: '5K',
-    bookmarks: '1.2K',
-  },
+  }
   // Add more products as needed
 ];
 
 export default function Home() {
+  const wishlist = useWishlist();
   const [containerHeight, setContainerHeight] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -302,6 +104,10 @@ export default function Home() {
       try {
         const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'LIKE' });
         if (!res.ok) throw new Error('network');
+        
+        // Update wishlist context to reflect the like
+        wishlist.addLikedProduct(product.id);
+        console.log('[Home] Product liked and added to wishlist context:', product.id);
       } catch (e) {
         Alert.alert('Error', 'Failed to send like to server.');
         console.warn('Like API failed', e);
@@ -322,6 +128,16 @@ export default function Home() {
         }
       }
     }
+    else {
+      // Handle swipe left (dislike)
+      try {
+        const res = await dislikeProduct(Number(product.id));
+        if (!res.ok) throw new Error('network');
+      } catch (e) {
+        Alert.alert('Error', 'Failed to send dislike to server.');
+        console.warn('Dislike API failed', e);
+      } 
+    }
 
     scheduleClearUndo();
   };
@@ -340,6 +156,10 @@ export default function Home() {
       try {
         const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'UNLIKE' });
         if (!res.ok) throw new Error('network');
+        
+        // Remove from wishlist context
+        wishlist.removeLikedProduct(product.id);
+        console.log('[Home] Product unliked and removed from wishlist context:', product.id);
       } catch (e) {
         Alert.alert('Error', 'Failed to revert like on server.');
         console.warn('Revert like failed', e);

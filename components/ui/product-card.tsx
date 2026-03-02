@@ -6,9 +6,10 @@ import {
   ImageBackground,
   TouchableOpacity,
   Alert,
+  Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { sendLikeNotification } from '../../lib/api';
+import { sendLikeNotification,saveProduct,shareProduct,openProduct,likeProduct,unlikeProduct,dislikeProduct } from '../../lib/api';
 
 export interface Product {
   id: string;
@@ -20,17 +21,25 @@ export interface Product {
   shares: string;
   bookmarks: string;
   deeplinkUrl?: string; // URL to open when user swipes right
+  category?: string; // Product category (e.g., "men's clothing")
+  externalId?: string; // External ID (e.g., Amazon ASIN)
+  rating?: number; // Product rating (e.g., 4.6)
 }
 
 interface ProductCardProps {
   product: Product;
+  onSave?: (productId: string | number, isSaved: boolean) => void;
+  onLike?: (productId: string | number, isLiked: boolean) => void;
 }
 
 
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, onSave, onLike }: ProductCardProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(product.likes);
+  const [saved, setSaved] = useState(false);
+  const [bookmarkCount, setBookmarkCount] = useState(parseInt(product.bookmarks) || 0);
+  const [shareCount, setShareCount] = useState(parseInt(product.shares) || 0);
 
   const formatCount = (n: number) => {
     if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -41,23 +50,88 @@ export default function ProductCard({ product }: ProductCardProps) {
   const handleLike = async () => {
     const action = liked ? 'Unlike' : 'Like';
     // quick popup feedback
-    Alert.alert(action, `You tapped ${action}.`);
+    // Alert.alert(action, `You tapped ${action}.`);
 
     // optimistic update
     const delta = liked ? -1 : 1;
-    setLiked(!liked);
+    const newLikedState = !liked;
+    setLiked(newLikedState);
     setLikeCount(c => c + delta);
 
     try {
       const actionType = liked ? 'UNLIKE' : 'LIKE';
       const res = await sendLikeNotification({ productId: Number(product.id), actionType });
       if (!res.ok) throw new Error('network');
+      
+      // Notify parent component of like status change
+      onLike?.(product.id, newLikedState);
     } catch (e) {
       // revert on error
       setLiked(prev => !prev);
       setLikeCount(c => c - delta);
       Alert.alert('Error', 'Failed to send like to server.');
       console.error('Like API failed', e);
+    }
+  };
+
+
+  const handleSave = async () => {
+    const action = saved ? 'Unsave' : 'Save';
+    // quick popup feedback
+    // Alert.alert(action, `Product ${action.toLowerCase()}d to your collection.`);
+
+    // optimistic update
+    const delta = saved ? -1 : 1;
+    const newSavedState = !saved;
+    setSaved(newSavedState);
+    setBookmarkCount(c => c + delta);
+
+    try {
+      const actionType = saved ? 'UNSAVE' : 'SAVE';
+      const res = await sendLikeNotification({ productId: Number(product.id), actionType });
+      if (!res.ok) throw new Error('network');
+      
+      // Notify parent component of save status change
+      onSave?.(product.id, newSavedState);
+    } catch (e) {
+      // revert on error
+      setSaved(prev => !prev);
+      setBookmarkCount(c => c - delta);
+      Alert.alert('Error', 'Failed to save product.');
+      console.error('Save failed', e);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      // Use deeplink if available, otherwise create a fallback message
+      const shareUrl = product.deeplinkUrl || `Check out: ${product.name}`;
+      const shareMessage = `Check out this amazing product! 🛍️\n\n${product.name}\n${product.price}\n\n${shareUrl}`;
+
+      const result = await Share.share({
+        message: shareMessage,
+        title: product.name,
+        url: product.deeplinkUrl, // iOS specific
+      });
+
+      // Track the share if user actually shared (not cancelled)
+      if (result.action === Share.dismissedAction) {
+        console.log('Share was dismissed');
+      } else {
+        // Update share count on successful share
+        setShareCount(c => c + 1);
+        
+        // Send share event to backend
+        try {
+          const res = await shareProduct(Number(product.id));
+          if (!res.ok) console.warn('Failed to track share on backend');
+        } catch (e) {
+          console.error('Share tracking failed', e);
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Unable to share at this time. Please try again.');
+      console.error('Share error:', error);
     }
   };
 
@@ -82,7 +156,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <View style={styles.socialIcons}>
             <TouchableOpacity style={styles.iconContainer} onPress={handleLike}>
               <View style={styles.iconCircle}>
-                <Ionicons name={liked ? 'heart' : 'heart-outline'} size={26} color={liked ? '#ff6b78' : 'white'} />
+                <Ionicons name={liked ? 'heart' : 'heart-outline'} size={30} color={liked ? '#ff6b78' : 'white'} />
               </View>
               <Text style={styles.iconText}>{formatCount(likeCount)}</Text>
             </TouchableOpacity>
@@ -97,18 +171,18 @@ export default function ProductCard({ product }: ProductCardProps) {
             </TouchableOpacity>
             */}
 
-            <TouchableOpacity style={styles.iconContainer}>
+            <TouchableOpacity style={styles.iconContainer} onPress={handleShare}>
               <View style={styles.iconCircle}>
-                <Ionicons name="paper-plane-outline" size={26} color="white" />
+                <Ionicons name="paper-plane-outline" size={30} color="white" />
               </View>
-              <Text style={styles.iconText}>{product.shares}</Text>
+              <Text style={styles.iconText}>{formatCount(shareCount)}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.iconContainer}>
+            <TouchableOpacity style={styles.iconContainer} onPress={handleSave}>
               <View style={styles.iconCircle}>
-                <Ionicons name="bookmark-outline" size={26} color="white" />
+                <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={30} color={saved ? '#ffd700' : 'white'} />
               </View>
-              <Text style={styles.iconText}>{product.bookmarks}</Text>
+              <Text style={styles.iconText}>{formatCount(bookmarkCount)}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -173,7 +247,7 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 27,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(2, 0, 0, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
   },

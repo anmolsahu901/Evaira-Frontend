@@ -1,12 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import WishlistCard, { WishlistItem } from '../../components/ui/wishlist-card';
+import { getWishlistData, unlikeProduct, unsaveProduct } from '../../lib/api';
+import { useWishlist } from '../../context/WishlistContext';
 
 const SAMPLE: WishlistItem[] = [
   {
@@ -51,13 +55,93 @@ const SAMPLE: WishlistItem[] = [
 ];
 
 export default function Wishlist() {
+  const wishlist = useWishlist();
   const [filter, setFilter] = useState<string>('Saved');
-  const [items, setItems] = useState<WishlistItem[]>(SAMPLE);
+  const [items, setItems] = useState<WishlistItem[]>([]);
+  const [loading, setLoading] = useState(true); // Start with loading = true to show loader on mount
+  const [error, setError] = useState<string | null>(null);
 
   const chips = useMemo(() => ['Saved', 'Liked by me'], []);
 
-  const onRemove = (id: string) => {
-    setItems((prev) => prev.filter((p) => p.id !== id));
+  // Convert API Product to WishlistItem
+  const convertProductToWishlistItem = (product: any): WishlistItem => ({
+    id: product.id, // Store database ID for API calls (productId)
+    brand: product.category || 'Product', // Use category as brand
+    name: product.title || 'Unknown Product',
+    price: `₹${product.price || 0}`,
+    imageUrl: product.imageUrl,
+    rating: product.rating || 0,
+    reviews: product.likesCount || 0, // Use likes count as reviews count
+    deeplinkUrl: product.deeplinkUrl, // Include deeplink from API
+  });
+
+  // Function to fetch products
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Determine action type based on filter
+      const actionType = filter === 'Saved' ? 'SAVE' : 'LIKE';
+      console.log('[Wishlist] Fetching products for filter:', filter);
+      const result = await getWishlistData(actionType);
+
+      if (result.ok && result.data && Array.isArray(result.data)) {
+        // Convert products to wishlist items
+        const wishlistItems = result.data.map(convertProductToWishlistItem);
+        setItems(wishlistItems);
+      } else {
+        setError('Failed to load products');
+        setItems([]); // Clear items on error
+      }
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Unable to fetch products');
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filter]);
+
+  // Fetch products when filter changes
+  useEffect(() => {
+    fetchProducts();
+  }, [filter, fetchProducts]);
+
+  // Refetch products whenever tab becomes visible
+  useFocusEffect(
+    useCallback(() => {
+      console.log('[Wishlist] Tab focused, refreshing products');
+      fetchProducts();
+    }, [fetchProducts])
+  );
+
+  const onRemove = async (productId: string | number) => {
+    try {
+      console.log('[Wishlist] Removing item:', { productId, filter });
+      
+      if (!productId) {
+        console.warn('[Wishlist] productId is missing, cannot remove from backend');
+        // Still remove from UI
+        setItems((prev) => prev.filter((p) => p.id !== productId));
+        return;
+      }
+
+      // Call the appropriate API method based on filter
+      const result = filter === 'Saved' 
+        ? await unsaveProduct(productId)
+        : await unlikeProduct(productId);
+
+      if (result.ok) {
+        console.log('[Wishlist] Successfully removed from backend:', { productId, filter });
+        // Remove from UI after successful API call
+        setItems((prev) => prev.filter((p) => p.id !== productId));
+      } else {
+        console.error('[Wishlist] Failed to remove from backend:', result);
+        // Optionally show an alert or toast
+      }
+    } catch (error) {
+      console.error('[Wishlist] Error removing item:', error);
+    }
   };
 
   const onMoveToBag = (id: string) => {
@@ -86,19 +170,34 @@ export default function Wishlist() {
         />
       </View>
 
-      <FlatList
-        data={items}
-        keyExtractor={(it) => it.id}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={{ paddingBottom: 80, paddingTop: 8 }}
-        renderItem={({ item }) => (
-          <WishlistCard item={item} onRemove={onRemove} onMoveToBag={onMoveToBag} />
-        )}
-        ListEmptyComponent={() => (
-          <View style={styles.empty}><Text style={{ color: '#666' }}>No items saved yet.</Text></View>
-        )}
-      />
+      {loading ? (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#ff2b54" />
+        </View>
+      ) : error ? (
+        <View style={styles.empty}>
+          <Text style={{ color: '#ff2b54', fontWeight: '600' }}>Error</Text>
+          <Text style={{ color: '#666', marginTop: 8 }}>{error}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(it) => String(it.id)}
+          numColumns={2}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={{ paddingBottom: 80, paddingTop: 8 }}
+          renderItem={({ item }) => (
+            <WishlistCard item={item} onRemove={onRemove} onMoveToBag={onMoveToBag} />
+          )}
+          ListEmptyComponent={() => (
+            <View style={styles.empty}>
+              <Text style={{ color: '#666' }}>
+                No items {filter === 'Saved' ? 'saved' : 'liked'} yet.
+              </Text>
+            </View>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -132,4 +231,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   empty: { padding: 24, alignItems: 'center' },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });

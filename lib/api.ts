@@ -4,7 +4,7 @@ import { useUserProfile } from '../context/UserProfileContext';
 
 export type SendLikePayload = {
   productId: number | string;
-  actionType: 'LIKE' | 'UNLIKE' | 'SAVE' | 'OPEN' | 'SHARE' | 'DISLIKE';
+  actionType: 'LIKE' | 'UNLIKE' | 'SAVE' | 'UNSAVE' | 'OPEN' | 'SHARE' | 'DISLIKE';
 };
 
 export type ApiResult = {
@@ -14,11 +14,13 @@ export type ApiResult = {
 };
 
 const API_URL = 'https://example.com/api/likes'; // ← Replace with your real endpoint
-const SEND_OTP_URL = 'http://192.168.1.12:8080/api/auth/send-otp';
-const VERIFY_OTP_URL = 'http://192.168.1.12:8080/api/auth/verify-otp';
-const PROFILE_CREATE_URL = 'http://192.168.1.12:8080/api/profile/create';
-const GET_PRODUCTS_URL = 'http://192.168.1.12:8080/api/user/products/getAllProducts';
-const ACTIONS_URL = 'http://192.168.1.12:8080/api/actions'; // Like/Unlike endpoint
+const SEND_OTP_URL = 'http://192.168.29.103:8080/api/auth/send-otp';
+const VERIFY_OTP_URL = 'http://192.168.29.103:8080/api/auth/verify-otp';
+const PROFILE_CREATE_URL = 'http://192.168.29.103:8080/api/profile/create';
+const GET_PRODUCTS_URL = 'http://192.168.29.103:8080/api/user/products/getAllProducts';
+const ACTIONS_URL = 'http://192.168.29.103:8080/api/actions'; // Like/Unlike endpoint
+const PRODUCT_BASED_ON_USER_ACTIONS_URL = 'http://192.168.29.103:8080/api/actions/basedOnUserActions'; // New endpoint for product recommendations based on user actions
+const WISHLIST_URL = 'http://192.168.29.103:8080/api/actions/getWishlistData';
 
 // Development mock toggle:
 // - By default, mocks are enabled in dev (__DEV__)
@@ -79,7 +81,8 @@ export async function authenticatedFetch(
     return { ok: response.ok, status: response.status, data };
   } catch (error) {
     console.error('authenticatedFetch error:', error);
-    return { ok: false, data: { error: error } };
+    // Return 0 status for network errors to distinguish from HTTP errors
+    return { ok: false, status: 0, data: { error: error } };
   }
 }
 
@@ -90,12 +93,12 @@ export async function sendLikeNotification(payload: SendLikePayload): Promise<Ap
   const force = isForceApiCall();
   // Dev-mode mock to avoid failing in local dev
   if (USE_DEV_MOCKS && !force) {
-    console.log('[api] sendLikeNotification: using dev mock');
+    console.log('[api] send Notification: using dev mock');
     await new Promise(res => setTimeout(res, 300)); // simulate latency
     return { ok: true, status: 200 };
   }
 
-  console.log('[api] sendLikeNotification: performing real request', { force, payload });
+  console.log('[api] send Notification: performing real request', { force, payload });
   
   // Use authenticatedFetch with JWT token
   return authenticatedFetch(ACTIONS_URL, {
@@ -115,6 +118,10 @@ export async function unlikeProduct(productId: number | string): Promise<ApiResu
 
 export async function saveProduct(productId: number | string): Promise<ApiResult> {
   return sendLikeNotification({ productId, actionType: 'SAVE' });
+}
+
+export async function unsaveProduct(productId: number | string): Promise<ApiResult> {
+  return sendLikeNotification({ productId, actionType: 'UNSAVE' });
 }
 
 export async function openProduct(productId: number | string): Promise<ApiResult> {
@@ -218,9 +225,10 @@ export async function validateToken(): Promise<boolean> {
     return true;
   }
 
-  // Other errors (network, 500, etc.) - assume token might still be valid
-  console.warn('Token validation inconclusive:', result.status);
-  return true; // Optimistic: let app try to proceed
+  // Network errors (status 0) or other failures: treat as validation failure
+  // This ensures user is sent to login instead of being stuck with invalid auth
+  console.warn('Token validation failed: Network error or server error (status:', result.status, ')');
+  return false;
 }
 
 // ✅ NEW: Fetch products with JWT authentication
@@ -242,6 +250,128 @@ export async function getProducts(): Promise<ApiResult> {
       shares: '0',
       bookmarks: '0',
       deeplinkUrl: apiProduct.deeplinkUrl || '', // Include deeplink from API
+      category: apiProduct.category || undefined,
+      externalId: apiProduct.externalId || undefined,
+      rating: apiProduct.rating || undefined,
+    }));
+    return { ok: true, status: result.status, data: mappedProducts };
+  }
+
+  return result;
+}
+
+// ✅ NEW: Fetch wishlist data (SAVE or LIKE products)
+// Returns a list of products that match the specified action type
+// API accepts actionType in body: "SAVE" or "LIKE"
+// Uses POST method to send request body with actionType
+// Example: getWishlistData('LIKE') -> POST to /api/actions/getWishlistData with { "actionType": "LIKE" }
+export async function getWishlistData(actionType: 'LIKE' | 'SAVE'): Promise<ApiResult> {
+  try {
+    const payload = { actionType };
+    console.log('[api] getWishlistData: starting request', { payload });
+
+    const result = await authenticatedFetch(WISHLIST_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    console.log('[api] getWishlistData: received response', { status: result.status, ok: result.ok });
+
+    if (result.ok && result.data && Array.isArray(result.data)) {
+      console.log(`[api] getWishlistData: successfully fetched ${result.data.length} products`, { actionType });
+      return result;
+    } else if (Array.isArray(result.data)) {
+      // Empty array is valid - user has no items of this type
+      console.log('[api] getWishlistData: received empty list', { actionType });
+      return { ok: true, status: result.status, data: [] };
+    } else {
+      console.warn('[api] getWishlistData: invalid response format', { actionType, status: result.status, data: result.data });
+      return { ok: false, status: result.status || 500, data: [] };
+    }
+  } catch (error) {
+    console.error('[api] getWishlistData: error occurred', { actionType, error });
+    return { ok: false, status: 0, data: [] };
+  }
+}
+
+// ✅ NEW: Fetch products based on user actions (SAVE, LIKE, etc.)
+// Returns a list of products that match the specified action type
+// Example: getProductsByUserAction('SAVE') returns all saved products
+export async function getProductsByUserAction(actionType: 'LIKE' | 'UNLIKE' | 'SAVE' | 'OPEN' | 'SHARE' | 'DISLIKE'): Promise<ApiResult> {
+  const force = isForceApiCall();
+  
+  // Dev-mode mock
+  if (USE_DEV_MOCKS && !force) {
+    console.log('[api] getProductsByUserAction: using dev mock', { actionType });
+    await new Promise(res => setTimeout(res, 300)); // simulate latency
+    
+    // Return mock products for development
+    const mockProducts = [
+      {
+        id: '1',
+        title: `${actionType} Product 1`,
+        price: 5000,
+        description: `Mock product with ${actionType} action`,
+        imageUrl: 'https://picsum.photos/400/600/?random=1',
+        likesCount: 100,
+        deeplinkUrl: 'evaira://product/1',
+        category: "men's clothing",
+        externalId: '5009',
+        rating: 4.6,
+      },
+      {
+        id: '2',
+        title: `${actionType} Product 2`,
+        price: 8000,
+        description: `Another mock product with ${actionType} action`,
+        imageUrl: 'https://picsum.photos/400/600/?random=2',
+        likesCount: 250,
+        deeplinkUrl: 'evaira://product/2',
+        category: "women's clothing",
+        externalId: '5010',
+        rating: 4.8,
+      },
+    ];
+    
+    const mappedProducts = mockProducts.map((apiProduct: any) => ({
+      id: String(apiProduct.id),
+      name: apiProduct.title || 'Unknown Product',
+      price: `₹${apiProduct.price || 0}`,
+      description: apiProduct.description || '',
+      imageUrl: apiProduct.imageUrl || '',
+      likes: apiProduct.likesCount || 0,
+      shares: '0',
+      bookmarks: '0',
+      deeplinkUrl: apiProduct.deeplinkUrl || '',
+    }));
+    
+    return { ok: true, status: 200, data: mappedProducts };
+  }
+
+  console.log('[api] getProductsByUserAction: performing real request', { actionType, force });
+
+  // Pass actionType as query parameter (GET requests cannot have body)
+  const urlWithParams = `${PRODUCT_BASED_ON_USER_ACTIONS_URL}?actionType=${actionType}`;
+  
+  const result = await authenticatedFetch(urlWithParams, {
+    method: 'GET',
+  });
+
+  if (result.ok && result.data && Array.isArray(result.data)) {
+    // Map API response to Product interface
+    const mappedProducts = result.data.map((apiProduct: any) => ({
+      id: String(apiProduct.id),
+      name: apiProduct.title || 'Unknown Product',
+      price: `₹${apiProduct.price || 0}`,
+      description: apiProduct.description || '',
+      imageUrl: apiProduct.imageUrl || '',
+      likes: apiProduct.likesCount || 0,
+      shares: '0',
+      bookmarks: '0',
+      deeplinkUrl: apiProduct.deeplinkUrl || '', // Include deeplink from API
+      category: apiProduct.category || undefined,
+      externalId: apiProduct.externalId || undefined,
+      rating: apiProduct.rating || undefined,
     }));
     return { ok: true, status: result.status, data: mappedProducts };
   }
