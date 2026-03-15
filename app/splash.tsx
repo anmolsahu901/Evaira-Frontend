@@ -18,38 +18,38 @@ import { validateToken } from '../lib/api';
 export default function SplashScreen() {
   const router = useRouter();
   const { setAuthToken } = useUserProfile();
-  
+
   // Animation values
   // const opacity = useSharedValue(0);
   const isInitialLoad = useRef(true);
   const authCheckDone = useRef(false);
 
   // Fade in animation
-const opacity = useSharedValue(1);
+  const opacity = useSharedValue(1);
 
-const animatedIconStyle = useAnimatedStyle(() => {
-  return {
-    opacity: opacity.value,
-  };
-});
+  const animatedIconStyle = useAnimatedStyle(() => {
+    return {
+      opacity: opacity.value,
+    };
+  });
 
-useEffect(() => {
-  opacity.value = 0;
+  useEffect(() => {
+    opacity.value = 0;
 
-  opacity.value = withDelay(
-    1000,
-    withTiming(1, {
-      duration: 1000,
-      easing: Easing.out(Easing.ease),
-    })
-  );
-}, []);
+    opacity.value = withDelay(
+      1000,
+      withTiming(1, {
+        duration: 1000,
+        easing: Easing.out(Easing.ease),
+      })
+    );
+  }, []);
 
   const handleGetStarted = () => {
     router.push('/login');
   };
 
-  
+
   useEffect(() => {
     const checkPersistentAuth = async () => {
       if (authCheckDone.current) return;
@@ -59,15 +59,15 @@ useEffect(() => {
       //   // ===== PERSISTENT AUTH CHECK - START =====
       //   // This functionality allows users to stay logged in between app sessions
       //   // To disable this (e.g., for UI updates or testing), comment out lines marked with [PERSIST_AUTH]
-        
+
       //   const token = await SecureStore.getItemAsync('authToken'); // [PERSIST_AUTH]
-        
+
       //   if (token) { // [PERSIST_AUTH]
       //     // Token found → User was previously logged in
       //     // Now validate if the token is still valid (not expired)
       //     console.log('Token found. Validating token...');
       //     const isTokenValid = await validateToken();
-          
+
       //     if (isTokenValid) {
       //       // ✅ Token is valid
       //       setAuthToken(token); // [PERSIST_AUTH]
@@ -85,7 +85,7 @@ useEffect(() => {
       //     console.log('No token found. Redirecting to login.');
       //     // router.replace('/login'); // [PERSIST_AUTH]
       //   } // [PERSIST_AUTH]
-        
+
       //   // ===== PERSISTENT AUTH CHECK - END =====
       // } catch (error) {
       //   console.error('Error checking persistent auth:', error);
@@ -112,14 +112,18 @@ useEffect(() => {
       <View style={styles.contentWrapper}>
         <Animated.View style={[styles.iconContainer, animatedIconStyle]}>
           <View style={styles.iconCircle}>
-            <ThemedText style={styles.lightningIcon}>⚡</ThemedText>
+            <Image
+              source={require('../assets/circle_icon.png')}
+              style={styles.iconImage}
+              resizeMode="contain"
+            />
           </View>
         </Animated.View>
 
         {/* Tagline */}
-         <ThemedText style={styles.branding}>EVAIRA</ThemedText>
+        <ThemedText style={styles.branding}>EVAIRA</ThemedText>
         <ThemedText style={styles.tagline}>STYLE, REIMAGINED.</ThemedText>
-        
+
         {/* Divider line */}
         <View style={styles.divider} />
       </View>
@@ -130,7 +134,7 @@ useEffect(() => {
         <ThemedText style={styles.aiText}>AI Powered Personal Styling</ThemedText>
 
         {/* Get Started Button */}
-        <Pressable 
+        <Pressable
           style={({ pressed }) => [
             styles.button,
             pressed && styles.buttonPressed
@@ -171,11 +175,14 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginBottom: 25,
   },
+  iconImage: {
+    width: 90,
+    height: 90,
+  },
   iconCircle: {
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: '#1a1f26',
     justifyContent: 'center',
     alignItems: 'center',
   },

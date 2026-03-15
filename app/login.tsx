@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
@@ -148,168 +149,430 @@ export default function LoginScreen() {
   }; 
 
   return (
-    <ThemedView style={styles.container} >
-      <View style={styles.topBar}>
-        <ThemedText style={styles.topBarText}>Evaira</ThemedText>
+    <ThemedView style={styles.container}>
+
+  {/* Main Content */}
+  <View style={styles.contentWrapper}>
+
+    {/* Lightning Icon */}
+    <View style={styles.iconContainer}>
+      <View style={styles.iconCircle}>
+        <Image
+          source={require('../assets/circle_icon.png')}
+          style={styles.iconImage}
+          resizeMode="contain"
+        />
+      </View>
+    </View>
+
+    {/* Title */}
+    <ThemedText style={styles.title}>Your AI stylist is waiting.</ThemedText>
+    <ThemedText style={styles.subtitle}>Sign in to see today's curated look.</ThemedText>
+
+    {/* LOGIN CARD */}
+    <View style={styles.loginCard}>
+
+      {/* Email */}
+      <View style={styles.formSection}>
+        <ThemedText style={styles.label}>EMAIL ADDRESS</ThemedText>
+
+        <View style={styles.inputWrapper}>
+          <MaterialCommunityIcons name="email-outline" size={18} color="#777" />
+
+          <TextInput
+            style={styles.inputField}
+            placeholder="name@example.com"
+            placeholderTextColor="#999"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={(value) => {
+              setEmail(value);
+              if (otpSent) {
+                setOtpSent(false);
+                setMessage('');
+                setMessageType(null);
+                setOtp('');
+              }
+            }}
+          />
+        </View>
       </View>
 
-      <Image source={Images.logo} style={styles.logo} />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your email"
-        placeholderTextColor="#666"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={(value) => {
-          setEmail(value);
-          if (otpSent) {
-            setOtpSent(false);
-            setMessage('');
-            setMessageType(null);
-            setOtp('');
-          }
-        }}
-      />
-
+      {/* Message */}
       {message ? (
-        <ThemedText style={[styles.messageText, messageType === 'error' ? styles.messageError : styles.messageSuccess]}>
+        <ThemedText
+          style={[
+            styles.messageText,
+            messageType === 'error'
+              ? styles.messageError
+              : styles.messageSuccess,
+          ]}
+        >
           {message}
         </ThemedText>
       ) : null}
 
-      {!otpSent && (
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleSendOtp}
-          disabled={sending}
-        >
-          {sending ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <ThemedText style={styles.buttonText}>Send OTP</ThemedText>
-          )}
-        </TouchableOpacity>
-      )} 
-
+      {/* OTP */}
       {otpSent && (
-        <>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter OTP"
-            placeholderTextColor="#666"
-            keyboardType="numeric"
-            value={otp}
-            onChangeText={setOtp}
-          />
+        <View style={styles.formSection}>
+          <View style={styles.otpHeader}>
+            <ThemedText style={styles.label}>OTP</ThemedText>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleContinue}
-            disabled={verifying}
-          >
-            {verifying ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <ThemedText style={styles.buttonText}>Continue</ThemedText>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity onPress={handleResendOtp} disabled={resending}>
+              <ThemedText style={styles.resendText}>
+                {resending ? 'Resending...' : 'Resend?'}
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity onPress={handleResendOtp} style={styles.resendWrapper}>
-            <ThemedText style={styles.resendText}>{resending ? 'Resending...' : 'Resend OTP'}</ThemedText>
-          </TouchableOpacity>
-        </>
+          <View style={styles.inputWrapper}>
+            <MaterialCommunityIcons name="lock-outline" size={18} color="#777" />
+
+            <TextInput
+              style={styles.inputField}
+              placeholder="OTP"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={otp}
+              onChangeText={setOtp}
+            />
+          </View>
+        </View>
       )}
 
+      {/* Button */}
+      <TouchableOpacity
+        style={[
+          styles.primaryButton,
+          (sending || verifying) && styles.buttonDisabled,
+        ]}
+        onPress={otpSent ? handleContinue : handleSendOtp}
+        disabled={sending || verifying}
+      >
+        {sending || verifying ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <View style={styles.buttonContent}>
+            <ThemedText style={styles.primaryButtonText}>
+              {otpSent ? 'VERIFY OTP' : 'SEND OTP'}
+            </ThemedText>
 
-      <TouchableOpacity onPress={handleSignUp} style={styles.signUpWrapper}>
-        <ThemedText style={styles.signUpText}>Don't have an account? Sign Up</ThemedText>
+            <MaterialCommunityIcons
+              name="arrow-right"
+              size={20}
+              color="#fff"
+              style={styles.buttonIcon}
+            />
+          </View>
+        )}
       </TouchableOpacity>
-    </ThemedView>
+
+      {/* Divider */}
+      <View style={styles.dividerContainer}>
+        <View style={styles.dividerLine} />
+        <ThemedText style={styles.dividerText}>OR CONTINUE WITH</ThemedText>
+        <View style={styles.dividerLine} />
+      </View>
+
+      {/* Social */}
+      <View style={styles.socialRow}>
+        <TouchableOpacity style={styles.socialButton}>
+          <MaterialCommunityIcons name="apple" size={22} color="#000" />
+          <ThemedText style={styles.socialText}>Apple</ThemedText>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.socialButton}>
+          <MaterialCommunityIcons name="google" size={22} color="#000" />
+          <ThemedText style={styles.socialText}>Google</ThemedText>
+        </TouchableOpacity>
+      </View>
+
+    </View>
+
+  </View>
+
+  {/* Bottom Section */}
+  <View style={styles.bottomSection}>
+
+    <View style={styles.securityBar}>
+      <MaterialCommunityIcons name="shield-check" size={16} color="#000000" />
+      <ThemedText style={styles.securityTextWhite}>
+        Secure, encrypted login powered by Evaira AI
+      </ThemedText>
+    </View>
+
+    <View style={styles.footerContainer}>
+      <TouchableOpacity>
+        <ThemedText style={styles.footerLink}>Privacy Policy</ThemedText>
+      </TouchableOpacity>
+
+      <ThemedText style={styles.footerDot}>•</ThemedText>
+
+      <TouchableOpacity>
+        <ThemedText style={styles.footerLink}>Terms of Service</ThemedText>
+      </TouchableOpacity>
+
+      <ThemedText style={styles.footerDot}>•</ThemedText>
+
+      <TouchableOpacity>
+        <ThemedText style={styles.footerLink}>Support</ThemedText>
+      </TouchableOpacity>
+    </View>
+
+  </View>
+
+</ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
-    justifyContent: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingVertical: 40,
     alignItems: 'center',
   },
-  logo: {
-    width: 160,
+  contentWrapper: {
+  flex: 1,
+  paddingHorizontal: 24,
+  paddingTop: 40,
+  alignItems: 'center',
+},
+
+
+  iconContainer: {
+    marginBottom: 25,
+    alignItems: 'center',
+  },
+  iconImage: {
+    width: 80,
     height: 80,
-    marginBottom: 32,
-    resizeMode: 'contain',
   },
-  input: {
-    width: '90%',
-    height: 64,
-    borderWidth: 4,
-    borderColor: '#111',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    marginBottom: 18,
-    fontSize: 18,
-    backgroundColor: '#fff',
-  },
-  button: {
-    width: '80%',
-    height: 64,
-    backgroundColor: '#2b3133',
-    borderRadius: 32,
+  iconCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    // backgroundColor: '#1a1a1a',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 12,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 20,
-  },
-  topBar: {
-    position: 'absolute',
-    top: 0,
-    left: -24,
-    right: -24,
-    height: 84,
-    backgroundColor: '#263238',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-    paddingTop: 18,
-  },
-  topBarText: {
-    color: '#fff',
-    fontSize: 32,
+  title: {
+    fontSize: 24,
     fontWeight: '600',
-  },
-  messageText: {
-    fontSize: 14,
-    marginTop: 8,
+    color: '#1a1a1a',
     marginBottom: 8,
     textAlign: 'center',
   },
+  subtitle: {
+    fontSize: 14,
+    color: '#999',
+    marginBottom: 32,
+    textAlign: 'center',
+  },
+  formSection: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  input: {
+    width: '100%',
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    color: '#1a1a1a',
+  },
+  messageText: {
+    fontSize: 13,
+    marginBottom: 16,
+    textAlign: 'center',
+    marginTop: -8,
+  },
   messageSuccess: {
-    color: 'green',
+    color: '#4CAF50',
   },
   messageError: {
-    color: 'red',
+    color: '#f44336',
   },
-  resendWrapper: {
-    marginTop: 8,
-    marginBottom: 18,
+  resendContainer: {
+    alignItems: 'flex-end',
+    width: '100%',
+    marginBottom: 16,
+    marginTop: -12,
   },
   resendText: {
-    fontSize: 16,
-    color: '#111',
+    fontSize: 13,
+    color: '#1a1a1a',
+    fontWeight: '600',
   },
-  signUpWrapper: {
+  primaryButton: {
+    width: '100%',
+    height: 48,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 28,
+    flexDirection: 'row',
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  buttonIcon: {
+    marginLeft: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  dividerContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
     marginTop: 8,
   },
-  signUpText: {
-    fontSize: 16,
-    color: '#111',
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
   },
+  dividerText: {
+    fontSize: 12,
+    color: '#999',
+    marginHorizontal: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  socialButton: {
+    flex: 1,
+  height: 46,
+  backgroundColor: '#fff',
+  borderRadius: 10,
+  justifyContent: 'center',
+  alignItems: 'center',
+  flexDirection: 'row',
+  gap: 8,
+  marginHorizontal: 4,
+  },
+  socialButtonText: {
+    fontSize: 14,
+    color: '#1a1a1a',
+    fontWeight: '500',
+  },
+  footer: {
+    marginTop: 32,
+    alignItems: 'center',
+    width: '100%',
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  footerLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  footerLink: {
+    fontSize: 11,
+    color: '#999',
+  },
+  footerDot: {
+    fontSize: 11,
+    color: '#999',
+  },
+  loginCard: {
+  width: '100%',
+  backgroundColor: '#ebebeb',
+  borderRadius: 20,
+  padding: 20,
+  marginTop: 5,
+},
+
+inputWrapper: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#f2f2f2',
+  borderRadius: 10,
+  paddingHorizontal: 12,
+  height: 48,
+  gap: 8,
+},
+
+inputField: {
+  flex: 1,
+  fontSize: 14,
+},
+
+otpHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 8,
+},
+
+socialRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  marginTop: 12,
+},
+
+
+
+socialText: {
+  fontSize: 13,
+  fontWeight: '500',
+},
+
+securityBar: {
+  //marginTop: 10,        // pushes it slightly down
+  paddingVertical: 8,
+  paddingHorizontal: 10, // left & right spacing inside box
+  borderRadius: 12,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  backgroundColor: '#dadada', // or your gradient color
+  alignSelf: 'center'
+},
+
+securityTextWhite: {
+  fontSize: 12,
+  color: '#fff',
+},
+footerContainer: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingBottom: 60,
+  gap: 12
+},
+bottomSection: {
+  paddingBottom: 15,
+  alignItems: 'center',
+},
 });
