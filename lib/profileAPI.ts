@@ -1,6 +1,6 @@
 import { UserProfile } from '../context/UserProfileContext';
 
-const BASE_URL = 'http://192.168.29.103:8080'; // Update with your backend URL
+const BASE_URL = 'http://192.168.1.12:8080'; // Update with your backend URL
 
 export const submitUserProfile = async (
   profile: UserProfile

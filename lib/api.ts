@@ -14,13 +14,13 @@ export type ApiResult = {
 };
 
 const API_URL = 'https://example.com/api/likes'; // ← Replace with your real endpoint
-const SEND_OTP_URL = 'http://192.168.29.103:8080/api/auth/send-otp';
-const VERIFY_OTP_URL = 'http://192.168.29.103:8080/api/auth/verify-otp';
-const PROFILE_CREATE_URL = 'http://192.168.29.103:8080/api/profile/create';
-const GET_PRODUCTS_URL = 'http://192.168.29.103:8080/api/user/products/getAllProducts';
-const ACTIONS_URL = 'http://192.168.29.103:8080/api/actions'; // Like/Unlike endpoint
-const PRODUCT_BASED_ON_USER_ACTIONS_URL = 'http://192.168.29.103:8080/api/actions/basedOnUserActions'; // New endpoint for product recommendations based on user actions
-const WISHLIST_URL = 'http://192.168.29.103:8080/api/actions/getWishlistData';
+const SEND_OTP_URL = 'http://192.168.1.12:8080/api/auth/send-otp';
+const VERIFY_OTP_URL = 'http://192.168.1.12:8080/api/auth/verify-otp';
+const PROFILE_CREATE_URL = 'http://192.168.1.12:8080/api/profile/create';
+const GET_PRODUCTS_URL = 'http://192.168.1.12:8080/api/user/products/getAllProducts';
+const ACTIONS_URL = 'http://192.168.1.12:8080/api/actions'; // Like/Unlike endpoint
+const PRODUCT_BASED_ON_USER_ACTIONS_URL = 'http://192.168.1.12:8080/api/actions/basedOnUserActions'; // New endpoint for product recommendations based on user actions
+const WISHLIST_URL = 'http://192.168.1.12:8080/api/actions/getWishlistData';
 
 // Development mock toggle:
 // - By default, mocks are enabled in dev (__DEV__)
