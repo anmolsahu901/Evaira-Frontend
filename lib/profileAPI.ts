@@ -1,6 +1,6 @@
 import { UserProfile } from '../context/UserProfileContext';
 
-const BASE_URL = 'http://192.168.1.12:8080'; // Update with your backend URL
+const BASE_URL = 'http://192.168.1.7:8080'; // Update with your backend URL
 
 export const submitUserProfile = async (
   profile: UserProfile
@@ -20,8 +20,10 @@ export const submitUserProfile = async (
       location: profile.location,
       bodyType: profile.bodyType,
       faceShape: profile.faceShape,
+      styleVibe: profile.styleVibe,
       preferredOccasions: profile.preferredOccasions,
       favoriteColors: profile.favoriteColors,
+      priceBucket: profile.priceBucket,
     };
 
     console.log('Submitting profile:', payload);

@@ -1,50 +1,38 @@
 
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Image, ScrollView, StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { FlatList, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { useUserProfile } from '../context/UserProfileContext';
-import { submitUserProfile } from '../lib/profileAPI';
 
-const PREDEFINED_COLORS = [
-  'Navy',
-  'Royal Blue',
-  'Black',
-  'Pink',
-  'Red',
-  'Emerald Green',
-  'White',
-  'Gray',
-  'Purple',
-  'Orange',
-  'Yellow',
-  'Brown',
-];
-
-const COLOR_SAMPLES: { [key: string]: string } = {
-  'Navy': '#001F3F',
-  'Royal Blue': '#4169E1',
-  'Black': '#111111',
-  'Pink': '#FF69B4',
-  'Red': '#FF4136',
-  'Emerald Green': '#50C878',
-  'White': '#FFFFFF',
-  'Gray': '#AAAAAA',
-  'Purple': '#B10DC9',
-  'Orange': '#FF851B',
-  'Yellow': '#FFDC00',
-  'Brown': '#8B4513',
+type ColorOption = {
+  key: string;
+  label: string;
+  hex?: string;
+  gradient?: readonly [string, string, ...string[]];
 };
+
+// Visual labels + swatches to match the provided UI design.
+const COLOR_OPTIONS: ColorOption[] = [
+  { key: 'Black', label: 'Black', hex: '#111111' },
+  { key: 'White', label: 'White', hex: '#FFFFFF' },
+  { key: 'Grey', label: 'Grey', hex: '#9CA3AF' },
+  { key: 'Blue', label: 'Blue', hex: '#2463EB' },
+  { key: 'Brown', label: 'Brown', hex: '#8B4513' },
+  { key: 'Green', label: 'Green', hex: '#0F6B4B' },
+  { key: 'Beige', label: 'Beige', hex: '#CFC7AF' },
+  { key: 'Pastels', label: 'Pastels', gradient: ['#D7E8FF', '#E5D6FF', '#F8D7D7'] as const },
+  { key: 'Earth Tones', label: 'Earth Tones', gradient: ['#8B4513', '#B07D4F', '#A67C52'] as const },
+];
 
 export default function FavoriteColorsScreen() {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { getProfileData } = useUserProfile();
+  const { setFavoriteColors } = useUserProfile();
 
   const toggleColor = (colorName: string) => {
     if (selected.includes(colorName)) {
@@ -70,42 +58,16 @@ export default function FavoriteColorsScreen() {
       alert('Please select at least one color');
       return;
     }
-    
-    setLoading(true);
-    
-    // Get complete profile data and merge with selected colors
-    // (Using local 'selected' state instead of relying on async context update)
-    const profileBase = getProfileData();
-    const profileData = {
-      ...profileBase,
-      favoriteColors: selected,
-      // Backend expects one of the enum values; fall back when user didn't pick it in an older flow.
-      priceBucket: profileBase.priceBucket ?? 'MEDIUM',
-    };
-    
-    submitUserProfile(profileData)
-      .then((response) => {
-        if (response.success) {
-          alert('Profile created successfully!');
-          // Navigate to home screen
-          router.replace('/(tabs)/home');
-        } else {
-          alert(`Error: ${response.message}`);
-        }
-      })
-      .catch((error) => {
-        console.error('Submit error:', error);
-        alert('Failed to submit profile');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+
+    // Save colors into context, then continue to price bucket selection.
+    setFavoriteColors(selected);
+    router.push('/profileSetup-3priceBucket' as any);
   };
 
   return (
     <ThemedView style={styles.container}>
       {/* Header (taken from `profileSetup-1styleVibe.tsx` layout) */}
-      <View style={styles.header}>
+      <View>
         <View style={styles.topBar}>
           <TouchableOpacity>
             <ThemedText style={styles.back}>‹</ThemedText>
@@ -119,21 +81,22 @@ export default function FavoriteColorsScreen() {
         </View>
 
         <View style={styles.progressContainer}>
-          <ThemedText style={styles.stepText}>STEP 1 OF 5</ThemedText>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '20%' }]} />
+            <ThemedText style={styles.stepText}>STEP 1 OF 5</ThemedText>
+            <View style={styles.progressBar}>
+              <View style={styles.progressFill} />
+            </View>
           </View>
-        </View>
 
-        <View style={styles.titleWrapper}>
+       
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View>
           <ThemedText style={styles.title}>Which colors do you love wearing?</ThemedText>
           <ThemedText style={styles.subtitle}>
             Select at least three to help your AI stylist curate your perfect palette.
           </ThemedText>
         </View>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <FlatList
           data={COLOR_OPTIONS}
           keyExtractor={(item) => item.key}
@@ -198,14 +161,10 @@ export default function FavoriteColorsScreen() {
 
       {/* Bottom Continue Button (same submit logic) */}
       <View style={styles.bottomButtonWrapper}>
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={loading}>
+        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
           <View style={styles.continueContent}>
             <ThemedText style={styles.continueText}>Continue</ThemedText>
-            {loading ? (
-              <ActivityIndicator color="#fff" style={styles.spinner} />
-            ) : (
-              <ThemedText style={styles.arrow}>→</ThemedText>
-            )}
+            <ThemedText style={styles.arrow}>→</ThemedText>
           </View>
         </TouchableOpacity>
       </View>
@@ -219,21 +178,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 50,
-  },
-
-  /* Header */
+  /* ---------------- TOP BAR ---------------- */
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
   },
 
   logo: {
-    width: 30,
-    height: 30,
+    width: 40,
+    height: 40,
+    alignSelf: 'center',
+    marginLeft: 19, // adjust for centering with back button
   },
 
   back: {
@@ -246,8 +204,10 @@ const styles = StyleSheet.create({
     color: '#777',
   },
 
+  /* ---------------- PROGRESS ---------------- */
   progressContainer: {
-    marginTop: 12,
+    paddingHorizontal: 20,
+    marginTop: 10,
   },
 
   stepText: {
@@ -266,38 +226,39 @@ const styles = StyleSheet.create({
   },
 
   progressFill: {
+    width: '40%', // step 1 of 5
     height: '100%',
     backgroundColor: '#111',
   },
 
-  titleWrapper: {
-    marginTop: 18,
-    alignItems: 'center',
-  },
 
+  /* ---------------- TITLE ---------------- */
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '800',
     color: '#111',
-    textAlign: 'center',
+    marginTop: 10,
+    paddingHorizontal: 20,
   },
 
   subtitle: {
-    marginTop: 10,
     fontSize: 14,
     color: '#666',
-    textAlign: 'center',
+    marginTop: 6,
+    marginBottom: 10,
+    paddingHorizontal: 20,
     lineHeight: 20,
   },
 
   scrollContent: {
-    paddingHorizontal: 20,
+    
     paddingTop: 6,
     paddingBottom: 120,
   },
 
   /* Grid */
   colorGrid: {
+    paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 8,
   },
@@ -362,6 +323,7 @@ const styles = StyleSheet.create({
 
   /* Surprise + Info Card */
   surprise: {
+    paddingHorizontal: 20,
     marginTop: 14,
     alignSelf: 'flex-start',
     marginLeft: 20,

@@ -126,10 +126,10 @@ export default function LoginScreen() {
 
         if (isNew) {
           // New user: go to profile creation (use replace so user can't go back to login)
-          router.replace('/createProfile' as any);
+          router.replace('/profileSetup-1styleVibe' as any);
         } else {
           // Existing user: go to home
-          router.replace('/(tabs)/home');
+          router.replace('/profileSetup-1styleVibe');
         }
       } else {
         setMessage('Invalid OTP. Please try again.');
