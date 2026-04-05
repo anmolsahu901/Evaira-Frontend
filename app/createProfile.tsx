@@ -38,7 +38,7 @@ export default function CreateProfileScreen() {
       setAge(age);
 
       await new Promise((r) => setTimeout(r, 400));
-      router.push('/profileDetails');
+      router.push('/profileSetup-1styleVibe');
     } finally {
       setLoading(false);
     }

@@ -163,12 +163,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: 'center',
-    backgroundColor: '#fff0f4',
+    backgroundColor: '#000000d5',
     borderWidth: 1,
-    borderColor: '#ff7a8a',
+    borderColor: '#5f5f5f',
   },
   moveText: {
-    color: '#ff2b54',
+    color: '#ffffff',
     fontWeight: '700',
   },
 });

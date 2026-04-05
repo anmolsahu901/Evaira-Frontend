@@ -8,14 +8,14 @@ export type UserProfile = {
   location: string | null;
   faceShape: string | null;
   bodyType: string | null;
-  styleVibe: string[];
+  styleVibes: string[];
   preferredOccasions: string[];
   favoriteColors: string[];
-  priceBucket: PriceBucket | null;
+  fitTypes: string[];
+  priceBucket: string | null;
   authToken: string | null;
 };
 
-export type PriceBucket = 'BUDGET' | 'VALUE' | 'MEDIUM' | 'PREMIUM';
 
 type UserProfileContextType = UserProfile & {
   setName: (name: string) => void;
@@ -24,10 +24,11 @@ type UserProfileContextType = UserProfile & {
   setLocation: (location: string) => void;
   setFaceShape: (shape: string) => void;
   setBodyType: (type: string) => void;
-  setStyleVibe: (vibes: string[]) => void;
+  setStyleVibes: (vibes: string[]) => void;
   setPreferredOccasions: (occasions: string[]) => void;
   setFavoriteColors: (colors: string[]) => void;
-  setPriceBucket: (bucket: PriceBucket) => void;
+  setFitTypes: (fitTypes: string[]) => void;
+  setPriceBucket: (bucket: string) => void;
   setAuthToken: (token: string | null) => void;
   resetProfile: () => void;
   getProfileData: () => UserProfile;
@@ -43,10 +44,11 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [location, setLocation] = useState<string | null>(null);
   const [faceShape, setFaceShape] = useState<string | null>(null);
   const [bodyType, setBodyType] = useState<string | null>(null);
-  const [styleVibe, setStyleVibe] = useState<string[]>([]);
+  const [styleVibes, setStyleVibes] = useState<string[]>([]);
   const [preferredOccasions, setPreferredOccasions] = useState<string[]>([]);
   const [favoriteColors, setFavoriteColors] = useState<string[]>([]);
-  const [priceBucket, setPriceBucket] = useState<PriceBucket | null>(null);
+  const [fitTypes, setFitTypes] = useState<string[]>([]);
+  const [priceBucket, setPriceBucket] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   const resetProfile = () => {
@@ -56,9 +58,10 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setLocation(null);
     setFaceShape(null);
     setBodyType(null);
-    setStyleVibe([]);
+    setStyleVibes([]);
     setPreferredOccasions([]);
     setFavoriteColors([]);
+    setFitTypes([]);
     setPriceBucket(null);
     setAuthToken(null);
   };
@@ -70,9 +73,10 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
     location,
     faceShape,
     bodyType,
-    styleVibe,
+    styleVibes,
     preferredOccasions,
     favoriteColors,
+    fitTypes,
     priceBucket,
     authToken,
   });
@@ -99,9 +103,10 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         location,
         faceShape,
         bodyType,
-        styleVibe,
+        styleVibes,
         preferredOccasions,
         favoriteColors,
+        fitTypes,
         priceBucket,
         authToken,
         setName,
@@ -110,9 +115,10 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setLocation,
         setFaceShape,
         setBodyType,
-        setStyleVibe,
+        setStyleVibes,
         setPreferredOccasions,
         setFavoriteColors,
+        setFitTypes,
         setPriceBucket,
         setAuthToken,
         resetProfile,

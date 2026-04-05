@@ -20,13 +20,15 @@ export const submitUserProfile = async (
       location: profile.location,
       bodyType: profile.bodyType,
       faceShape: profile.faceShape,
-      styleVibe: profile.styleVibe,
+      styleVibes: profile.styleVibes,
+      fitTypes: profile.fitTypes,
       preferredOccasions: profile.preferredOccasions,
       favoriteColors: profile.favoriteColors,
       priceBucket: profile.priceBucket,
     };
 
-    console.log('Submitting profile:', payload);
+    console.log('Submitting profile payload:', JSON.stringify(payload, null, 2));
+    console.log('Price bucket value:', profile.priceBucket, typeof profile.priceBucket);
 
     const response = await fetch(`${BASE_URL}/api/profile/create`, {
       method: 'POST',

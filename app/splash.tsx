@@ -19,6 +19,7 @@ export default function SplashScreen() {
   const router = useRouter();
   const { setAuthToken } = useUserProfile();
 
+  
   // Animation values
   // const opacity = useSharedValue(0);
   const isInitialLoad = useRef(true);
@@ -46,7 +47,12 @@ export default function SplashScreen() {
   }, []);
 
   const handleGetStarted = () => {
-    router.push('/login');
+    // router.push('/login');
+
+    router.push('/login'); // Temporary: auto-navigate to login for development/testing. Remove this line to enable splash screen and auth check.
+
+
+
   };
 
 
@@ -55,43 +61,48 @@ export default function SplashScreen() {
       if (authCheckDone.current) return;
       authCheckDone.current = true;
 
-      // try {
-      //   // ===== PERSISTENT AUTH CHECK - START =====
-      //   // This functionality allows users to stay logged in between app sessions
-      //   // To disable this (e.g., for UI updates or testing), comment out lines marked with [PERSIST_AUTH]
+      try {
+        // ===== PERSISTENT AUTH CHECK - START =====
+        // This functionality allows users to stay logged in between app sessions
+        // To disable this (e.g., for UI updates or testing), comment out lines marked with [PERSIST_AUTH]
 
-      //   const token = await SecureStore.getItemAsync('authToken'); // [PERSIST_AUTH]
+        const token = await SecureStore.getItemAsync('authToken'); // [PERSIST_AUTH]
 
-      //   if (token) { // [PERSIST_AUTH]
-      //     // Token found → User was previously logged in
-      //     // Now validate if the token is still valid (not expired)
-      //     console.log('Token found. Validating token...');
-      //     const isTokenValid = await validateToken();
+        if (token) { // [PERSIST_AUTH]
+          // Token found → User was previously logged in
+          // Now validate if the token is still valid (not expired)
+          console.log('Token found. Validating token...');
+          const isTokenValid = await validateToken();
 
-      //     if (isTokenValid) {
-      //       // ✅ Token is valid
-      //       setAuthToken(token); // [PERSIST_AUTH]
+          if (isTokenValid) {
+            // ✅ Token is valid
+            setAuthToken(token); // [PERSIST_AUTH]
 
-      //       console.log('✅ Token validation successful. Token is valid. Navigating to home.');
-      //       router.replace('/(tabs)/home'); // [PERSIST_AUTH]
-      //     } else {
-      //       // ❌ Token is expired (401) or validation failed - clear it and send to login
-      //       console.warn('❌ Token validation failed. Clearing token and redirecting to login.');
-      //       await SecureStore.deleteItemAsync('authToken');
-      //       router.replace('/login'); // [PERSIST_AUTH]
-      //     }
-      //   } else { // [PERSIST_AUTH]
-      //     // No token → User needs to login
-      //     console.log('No token found. Redirecting to login.');
-      //     // router.replace('/login'); // [PERSIST_AUTH]
-      //   } // [PERSIST_AUTH]
+            console.log('✅ Token validation successful. Token is valid. Navigating to home.');
+            
+            
+            router.replace('/(tabs)/home'); // [PERSIST_AUTH]
+          //  router.replace('/login'); // [chang
+          // es for testing ]
 
-      //   // ===== PERSISTENT AUTH CHECK - END =====
-      // } catch (error) {
-      //   console.error('Error checking persistent auth:', error);
-      //   // On error, default to login screen for safety
-      // //  router.replace('/login');
-      // }
+          } else {
+            // ❌ Token is expired (401) or validation failed - clear it and send to login
+            console.warn('❌ Token validation failed. Clearing token and redirecting to login.');
+            await SecureStore.deleteItemAsync('authToken');
+           // router.replace('/login'); // [PERSIST_AUTH]
+          }
+        } else { // [PERSIST_AUTH]
+          // No token → User needs to login
+          console.log('No token found. Redirecting to login.');
+          // router.replace('/login'); // [PERSIST_AUTH]
+        } // [PERSIST_AUTH]
+
+        // ===== PERSISTENT AUTH CHECK - END =====
+      } catch (error) {
+        console.error('Error checking persistent auth:', error);
+        // On error, default to login screen for safety
+      //  router.replace('/login');
+      }
     };
 
 

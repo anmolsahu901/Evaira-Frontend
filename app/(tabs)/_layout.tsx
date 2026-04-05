@@ -13,11 +13,7 @@ export default function TabLayout() {
     <SafeAreaView style={styles.container}>
           <StatusBar barStyle="light-content" />
     
-          <View style={styles.header}>
-            <Text style={styles.headerText}>
-              Evaira <Text style={styles.citeText}></Text>
-            </Text>
-          </View>
+         
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -119,26 +115,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212',
-  },
-   header: {
-    paddingVertical: 18,
-    alignItems: 'center',
-    backgroundColor: '#22262A',
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  headerText: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  citeText: {
-    fontWeight: '400',
-    fontSize: 16,
-    color: '#cfcfcf',
   },
 });

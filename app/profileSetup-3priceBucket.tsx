@@ -1,189 +1,235 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState, useRef, useEffect } from 'react';
+import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View, Animated, PanResponder } from 'react-native';
 
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
-import { useUserProfile, type PriceBucket } from '../context/UserProfileContext';
+import { useUserProfile } from '../context/UserProfileContext';
 import { submitUserProfile } from '../lib/profileAPI';
 
 const PRICE_BUCKETS: Array<{
-  key: PriceBucket;
+  key: string;
   pillLabel: string;
   sliderLabel: string;
   infoTitle: string;
   infoBody: string;
 }> = [
-  {
-    key: 'BUDGET',
-    pillLabel: 'Budget',
-    sliderLabel: 'BUDGET',
-    infoTitle: 'Budget Shopping',
-    infoBody: 'Everyday essentials at great prices. Expected range: Rs500 - Rs1000.',
-  },
-  {
-    key: 'VALUE',
-    pillLabel: 'Value',
-    sliderLabel: 'VALUE',
-    infoTitle: 'Value Shopping',
-    infoBody: 'Quality basics with smart value. Expected range: Rs900 - Rs1600.',
-  },
-  {
-    key: 'MEDIUM',
-    pillLabel: 'Mid-range',
-    sliderLabel: 'MID-RANGE',
-    infoTitle: 'Mid-range Shopping',
-    infoBody: 'Contemporary brands and premium materials. Expected range: Rs1000 - Rs2500.',
-  },
-  {
-    key: 'PREMIUM',
-    pillLabel: 'Premium',
-    sliderLabel: 'PREMIUM',
-    infoTitle: 'Premium Shopping',
-    infoBody: 'Designer pieces and top-tier fabrics. Expected range: Rs2500+',
-  },
-];
+    {
+      key: 'BUDGET',
+      pillLabel: 'Budget',
+      sliderLabel: 'BUDGET',
+      infoTitle: 'Budget Shopping',
+      infoBody: 'Everyday essentials at great prices. Expected range: Rs500 - Rs1000.',
+    },
+    {
+      key: 'VALUE',
+      pillLabel: 'Value',
+      sliderLabel: 'VALUE',
+      infoTitle: 'Value Shopping',
+      infoBody: 'Quality basics with smart value. Expected range: Rs900 - Rs1600.',
+    },
+    {
+      key: 'MIDRANGE',
+      pillLabel: 'Mid-Range',
+      sliderLabel: 'MID-RANGE',
+      infoTitle: 'Mid-range Shopping',
+      infoBody: 'Contemporary brands and premium materials. Expected range: Rs1000 - Rs2500.',
+    },
+    {
+      key: 'PREMIUM',
+      pillLabel: 'Premium',
+      sliderLabel: 'PREMIUM',
+      infoTitle: 'Premium Shopping',
+      infoBody: 'Designer pieces and top-tier fabrics. Expected range: Rs2500+',
+    },
+  ];
 
 export default function PriceBucketScreen() {
   const router = useRouter();
-  const { setPriceBucket, getProfileData } = useUserProfile();
+  const { setPriceBucket } = useUserProfile();
 
-  const [selectedBucket, setSelectedBucket] = useState<PriceBucket>('MEDIUM');
-  const [loading, setLoading] = useState(false);
+  const [selectedBucket, setSelectedBucket] = useState<string>();
+  // const [loading, setLoading] = useState(false);
+  const [sliderWidth, setSliderWidth] = useState(0);
 
   const selectedIndex = useMemo(() => {
+    if (!selectedBucket) return -1;
     const idx = PRICE_BUCKETS.findIndex((b) => b.key === selectedBucket);
-    return idx >= 0 ? idx : 0; 
+    return idx >= 0 ? idx : -1;
   }, [selectedBucket]);
 
-  const selectedMeta = PRICE_BUCKETS[selectedIndex];
+  const selectedMeta = selectedIndex >= 0 ? PRICE_BUCKETS[selectedIndex] : PRICE_BUCKETS[0];
 
-  const sliderFillPercent = useMemo(() => {
-    if (PRICE_BUCKETS.length <= 1) return 0;
-    return (selectedIndex / (PRICE_BUCKETS.length - 1)) * 100;
+  const sliderPositionAnim = useRef(new Animated.Value(0)).current;
+  const dragStartPercent = useRef(0);
+
+  useEffect(() => {
+    if (selectedIndex === -1) return; // Don't animate if nothing is selected
+    const newPercent = (selectedIndex / (PRICE_BUCKETS.length - 1)) * 100;
+    Animated.spring(sliderPositionAnim, {
+      toValue: newPercent,
+      useNativeDriver: false,
+    }).start();
   }, [selectedIndex]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        sliderPositionAnim.stopAnimation();
+        dragStartPercent.current = selectedIndex >= 0 ? (selectedIndex / (PRICE_BUCKETS.length - 1)) * 100 : 0;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        if (sliderWidth === 0) return;
+        const movePercent = (gestureState.dx / sliderWidth) * 100;
+        const newPercent = dragStartPercent.current + movePercent;
+        const clampedPercent = Math.max(0, Math.min(100, newPercent));
+        sliderPositionAnim.setValue(clampedPercent);
+      },
+      onPanResponderRelease: (e, gestureState) => {
+        if (sliderWidth === 0) return;
+        const movePercent = (gestureState.dx / sliderWidth) * 100;
+        const finalPercent = dragStartPercent.current + movePercent;
+        const clampedPercent = Math.max(0, Math.min(100, finalPercent));
+
+        const stepPercent = 100 / (PRICE_BUCKETS.length - 1);
+        const closestIndex = Math.round(clampedPercent / stepPercent);
+        const clampedIndex = Math.max(0, Math.min(PRICE_BUCKETS.length - 1, closestIndex));
+
+        setSelectedBucket(PRICE_BUCKETS[clampedIndex].key);
+        console.log('Selected bucket:', PRICE_BUCKETS[clampedIndex].key);
+      },
+    })
+  ).current;
+
+  const sliderFillWidth = sliderPositionAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+    extrapolate: 'clamp',
+  });
 
   const handleContinue = async () => {
     if (!selectedBucket) {
       alert('Please select a shopping range');
       return;
     }
-
-    setLoading(true);
-    try {
-      setPriceBucket(selectedBucket);
-
-      const profileData = { ...getProfileData(), priceBucket: selectedBucket };
-      const response = await submitUserProfile(profileData);
-
-      if (response.success) {
-        router.replace('/(tabs)/home');
-      } else {
-        alert(`Error: ${response.message}`);
-      }
-    } catch (e) {
-      console.error('Submit error:', e);
-      alert('Failed to submit profile');
-    } finally {
-      setLoading(false);
-    }
+    console.log('Submitting price bucket:', selectedBucket);
+    setPriceBucket(selectedBucket);
+    router.push('/profileSetup-4occasion');
   };
 
   return (
     <ThemedView style={styles.container}>
-      {/* Header (taken from `profileSetup-1styleVibe.tsx` layout) */}
-      <View style={styles.topBar}>
-        <TouchableOpacity>
-          <ThemedText style={styles.back}>‹</ThemedText>
-        </TouchableOpacity>
-
-        <Image source={require('../assets/circle_icon.png')} style={styles.logo} />
-
-        <TouchableOpacity>
-          <ThemedText style={styles.skip}>Skip</ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      {/* Progress */}
-      <View style={styles.progressContainer}>
-        <ThemedText style={styles.stepText}>STEP 3 OF 5</ThemedText>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '60%' }]} />
-        </View>
-      </View>
-
-      {/* Title */}
-      <ThemedText style={styles.title}>What’s your typical shopping range?</ThemedText>
-      <ThemedText style={styles.subtitle}>We’ll match great styles within your comfort zone.</ThemedText>
-
-      <View style={styles.pillRow}>
-        <View style={styles.pill}>
-          <ThemedText style={styles.pillText}>{selectedMeta.pillLabel}</ThemedText>
-        </View>
-      </View>
-
-      {/* Slider */}
-      <View style={styles.sliderWrap}>
-        <View style={styles.sliderTrack}>
-          <View style={[styles.sliderFill, { width: `${sliderFillPercent}%` }]} />
+      <View style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={() => router.back()}>
+            <ThemedText style={styles.back}>‹</ThemedText>
+          </TouchableOpacity>
+          <Image source={require('../assets/circle_icon.png')} style={styles.logo} />
+          <TouchableOpacity>
+            <ThemedText style={styles.skip}>Skip</ThemedText>
+          </TouchableOpacity>
         </View>
 
-        {/* Dots are positioned along the track */}
-        <View style={styles.dotsRow} pointerEvents="box-none">
-          {PRICE_BUCKETS.map((b, idx) => {
-            const isActive = b.key === selectedBucket;
-            const leftPercent = (idx / (PRICE_BUCKETS.length - 1)) * 100;
+        {/* Progress */}
+        <View style={styles.progressContainer}>
+          <ThemedText style={styles.stepText}>STEP 3 OF 5</ThemedText>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: '60%' }]} />
+          </View>
+        </View>
 
-            return (
-              <TouchableOpacity
+        {/* Title */}
+        <ThemedText style={styles.title}>What's your typical shopping range?</ThemedText>
+        <ThemedText style={styles.subtitle}>We'll match great styles within your comfort zone.</ThemedText>
+
+        <View style={styles.pillRow}>
+          <View style={styles.pill}>
+            <ThemedText style={styles.pillText}>{selectedMeta.pillLabel}</ThemedText>
+          </View>
+        </View>
+
+        {/* Slider */}
+        <View style={styles.sliderWrap} onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}>
+          <View style={styles.sliderTrack}>
+            <Animated.View style={[styles.sliderFill, { width: sliderFillWidth }]} />
+          </View>
+
+          <View style={styles.dotsRow} pointerEvents="box-none">
+            {PRICE_BUCKETS.map((b, idx) => {
+              const isActive = b.key === selectedBucket;
+              const leftPercent = (idx / (PRICE_BUCKETS.length - 1)) * 100;
+
+              if (isActive) {
+                const handleLeft = sliderPositionAnim.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: ['0%', '100%'],
+                  extrapolate: 'clamp',
+                });
+                return (
+                  <Animated.View
+                    key={b.key}
+                    style={[styles.dotButton, { left: handleLeft }]}
+                    {...panResponder.panHandlers}
+                  >
+                    <View style={[styles.dotOuter, styles.dotOuterActive]}>
+                      <View style={[styles.dotInner, styles.dotInnerActive]} />
+                    </View>
+                  </Animated.View>
+                );
+              }
+
+              return (
+                <TouchableOpacity
+                  key={b.key}
+                  style={[styles.dotButton, { left: `${leftPercent}%` }]}
+                  onPress={() => setSelectedBucket(b.key)}
+                  activeOpacity={0.9}
+                >
+                  <View style={[styles.dotOuter]}>
+                    <View style={[styles.dotInner]} />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <View style={styles.labelsRow}>
+            {PRICE_BUCKETS.map((b) => (
+              <ThemedText
                 key={b.key}
-                style={[styles.dotButton, { left: `${leftPercent}%` }]}
-                onPress={() => setSelectedBucket(b.key)}
-                activeOpacity={0.9}
+                style={[styles.sliderLabel, b.key === selectedBucket && styles.sliderLabelActive]}
               >
-                <View style={[styles.dotOuter, isActive && styles.dotOuterActive]}>
-                  <View style={[styles.dotInner, isActive && styles.dotInnerActive]} />
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+                {b.sliderLabel}
+              </ThemedText>
+            ))}
+          </View>
         </View>
 
-        <View style={styles.labelsRow}>
-          {PRICE_BUCKETS.map((b) => (
-            <ThemedText
-              key={b.key}
-              style={[styles.sliderLabel, b.key === selectedBucket && styles.sliderLabelActive]}
-            >
-              {b.sliderLabel}
-            </ThemedText>
-          ))}
+        {/* Info card */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoIcon}>
+            <ThemedText style={styles.infoIconText}>i</ThemedText>
+          </View>
+          <View style={styles.infoText}>
+            <ThemedText style={styles.infoTitle}>{selectedMeta.infoTitle}</ThemedText>
+            <ThemedText style={styles.infoBody}>{selectedMeta.infoBody}</ThemedText>
+          </View>
         </View>
-      </View>
 
-      {/* Info card */}
-      <View style={styles.infoCard}>
-        <View style={styles.infoIcon}>
-          <ThemedText style={styles.infoIconText}>i</ThemedText>
+        {/* Small adjust box */}
+        <View style={styles.adjustBox}>
+          <View style={styles.adjustDot} />
+          <ThemedText style={styles.adjustText}>You can adjust this anytime in your profile settings.</ThemedText>
         </View>
-        <View style={styles.infoText}>
-          <ThemedText style={styles.infoTitle}>{selectedMeta.infoTitle}</ThemedText>
-          <ThemedText style={styles.infoBody}>{selectedMeta.infoBody}</ThemedText>
-        </View>
-      </View>
-
-      {/* Small adjust box */}
-      <View style={styles.adjustBox}>
-        <View style={styles.adjustDot} />
-        <ThemedText style={styles.adjustText}>You can adjust this anytime in your profile settings.</ThemedText>
       </View>
 
       {/* Bottom Continue Button */}
       <View style={styles.bottomWrap}>
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={loading}>
+        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
           <View style={styles.continueContent}>
             <ThemedText style={styles.continueText}>Continue</ThemedText>
-            {loading ? <ActivityIndicator color="#fff" /> : null}
           </View>
         </TouchableOpacity>
       </View>
@@ -195,13 +241,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    paddingHorizontal: 20,
   },
 
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
     paddingTop: 50,
   },
 
@@ -223,10 +269,8 @@ const styles = StyleSheet.create({
     marginLeft: 19,
   },
 
-  /* ---------------- PROGRESS ---------------- */
   progressContainer: {
-    paddingHorizontal: 20,
-    marginTop: 10,
+    marginTop: 20,
   },
 
   stepText: {
@@ -253,8 +297,7 @@ const styles = StyleSheet.create({
     color: '#111',
     fontSize: 32,
     fontWeight: '800',
-    marginTop: 20,
-    paddingHorizontal: 20,
+    marginTop: 30,
     textAlign: 'left',
   },
 
@@ -263,189 +306,174 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 6,
     marginBottom: 8,
-    paddingHorizontal: 20,
-    textAlign: 'left',
     lineHeight: 20,
   },
 
   pillRow: {
-    marginTop: 6,
     alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 20,
   },
 
   pill: {
-    backgroundColor: '#111',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 999,
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
 
   pillText: {
-    color: '#fff',
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '600',
+    color: '#111',
   },
 
-  /* ---------------- SLIDER ---------------- */
   sliderWrap: {
-    marginTop: 22,
+    marginTop: 40,
+    marginBottom: 20,
   },
 
   sliderTrack: {
-    height: 8,
-    backgroundColor: '#cfd8dc',
-    borderRadius: 10,
+    height: 4,
+    backgroundColor: '#eee',
+    borderRadius: 2,
     overflow: 'hidden',
-    position: 'relative',
   },
 
   sliderFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
+    height: '100%',
     backgroundColor: '#111',
   },
 
   dotsRow: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: -8,
-    height: 28,
+    position: 'relative',
+    height: 50,
+    marginTop: 0,
   },
 
   dotButton: {
     position: 'absolute',
-    transform: [{ translateX: -10 }, { translateY: 0 }],
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: -25,
   },
 
   dotOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     borderWidth: 2,
-    borderColor: '#d9dee4',
-    backgroundColor: '#fff',
-    alignItems: 'center',
+    borderColor: '#ddd',
     justifyContent: 'center',
+    alignItems: 'center',
   },
 
   dotOuterActive: {
     borderColor: '#111',
-    backgroundColor: '#111',
   },
 
   dotInner: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#d9dee4',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'transparent',
   },
 
   dotInnerActive: {
-    backgroundColor: '#fff',
+    backgroundColor: '#111',
   },
 
   labelsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 18,
-    paddingHorizontal: 2,
+    marginTop: 16,
   },
 
   sliderLabel: {
-    color: '#c0c7d1',
-    fontSize: 10,
-    fontWeight: '700',
-    width: '22%',
+    fontSize: 11,
+    color: '#999',
+    fontWeight: '600',
+    flex: 1,
     textAlign: 'center',
   },
 
   sliderLabelActive: {
     color: '#111',
+    fontWeight: '700',
   },
 
-  /* ---------------- INFO CARD ---------------- */
   infoCard: {
-    marginTop: 22,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 24,
+    marginBottom: 12,
   },
 
   infoIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#f1f3f5',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#ddd',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 2,
+    marginRight: 12,
   },
 
   infoIconText: {
-    color: '#7b869b',
-    fontWeight: '900',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#111',
   },
 
   infoText: {
-    marginLeft: 12,
     flex: 1,
   },
 
   infoTitle: {
-    fontSize: 16,
-    fontWeight: '900',
+    fontSize: 12,
+    fontWeight: '700',
     color: '#111',
+    marginBottom: 4,
   },
 
   infoBody: {
-    marginTop: 4,
-    fontSize: 12,
-    color: '#7b869b',
+    fontSize: 11,
+    color: '#666',
     lineHeight: 16,
   },
 
-  /* ---------------- Adjust box ---------------- */
   adjustBox: {
-    marginTop: 16,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#eff2f6',
-    padding: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 12,
   },
 
   adjustDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: '#111',
-    marginRight: 10,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#999',
+    marginRight: 8,
   },
 
   adjustText: {
-    color: '#7b869b',
-    fontSize: 12,
-    lineHeight: 16,
-    flex: 1,
+    fontSize: 11,
+    color: '#999',
   },
 
-  /* ---------------- Continue ---------------- */
   bottomWrap: {
-    marginTop: 18,
-    paddingBottom: 24,
+    paddingBottom: 20,
+    paddingHorizontal: 0,
   },
 
   continueButton: {
-    height: 64,
-    backgroundColor: '#111',
-    borderRadius: 32,
+    height: 56,
+    backgroundColor: '#2b3133',
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -453,13 +481,13 @@ const styles = StyleSheet.create({
   continueContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
   },
 
   continueText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
+
 

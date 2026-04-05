@@ -1,19 +1,61 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { FlatList, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { ThemedText } from "../components/themed-text";
 import { ThemedView } from "../components/themed-view";
-import { Images } from "../constants/images";
 import { useUserProfile } from "../context/UserProfileContext";
 
-const OPTIONS = [
-  "Party & Clubwear",
-  "Traditional & Ethnic",
-  "Everyday Casuals",
-  "Gen Z Trends",
-  "Work Formal",
-  "Activewear & Sporty",
+const OCCASIONS = [
+  {
+    id: "OFFICE",
+    label: "Office",
+    subtitle: "Professional & Polished",
+    icon: "👔",
+  },
+  {
+    id: "COLLEGE",
+    label: "College",
+    subtitle: "Smart & Trendy",
+    icon: "🎓",
+  },
+  {
+    id: "CASUAL_EVERYDAY",
+    label: "Casual Everyday",
+    subtitle: "Easy & Comfortable",
+    icon: "☕",
+  },
+  {
+    id: "GYM_ACTIVE",
+    label: "Gym / Active",
+    subtitle: "High Performance",
+    icon: "💪",
+  },
+  {
+    id: "HOME_LOUNGE",
+    label: "Home",
+    subtitle: "Cozy & Relaxed",
+    icon: "🏠",
+  },
+  {
+    id: "PARTY",
+    label: "Party",
+    subtitle: "Elegant & Bold",
+    icon: "🍷",
+  },
+  {
+    id: "VACATION",
+    label: "Vacation",
+    subtitle: "Versatile & Chic",
+    icon: "✈️",
+  },
+
+  {
+    id: "FESTIVE",
+    label: "Festive",
+    subtitle: "Traditional & Vibrant",
+    icon: "🏠",
+  },
 ];
 
 export default function OccasionsScreen() {
@@ -21,77 +63,106 @@ export default function OccasionsScreen() {
   const [selected, setSelected] = useState<string[]>([]);
   const { setPreferredOccasions } = useUserProfile();
 
-  const toggle = (item: string) => {
-    if (selected.includes(item)) {
-      setSelected((s) => s.filter((x) => x !== item));
-    } else {
-      if (selected.length >= 3) {
-        alert("You can select up to 3 options");
-        return;
-      }
-      setSelected((s) => [...s, item]);
-    }
+  const toggleOption = (occasionId: string) => {
+    setSelected((current) =>
+      current.includes(occasionId)
+        ? current.filter((id) => id !== occasionId)
+        : [...current, occasionId]
+    );
   };
 
   const handleContinue = () => {
+    if (!selected.length) {
+      alert("Select at least one occasion to continue.");
+      return;
+    }
     // Save occasions to context and navigate to favorite colors
     setPreferredOccasions(selected);
-    router.push("/favoriteColors");
+    router.push("/profileSetup-5fitType");
   };
 
   return (
     <ThemedView style={styles.container}>
+      {/* Top Bar */}
       <View style={styles.topBar}>
-        <ThemedText style={styles.topBarText}>Evaira</ThemedText>
-      </View>
+        <TouchableOpacity onPress={() => router.back()}>
+          <ThemedText style={styles.back}>‹</ThemedText>
+        </TouchableOpacity>
 
-      <View style={styles.content}>
-        <ThemedText style={styles.title}>
-          And for which occasion are you shopping?
-        </ThemedText>
-        <ThemedText style={styles.subtitle}>
-          Select up to 3 options that describe your style.
-        </ThemedText>
-
-        <FlatList
-          data={OPTIONS}
-          keyExtractor={(i) => i}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => {
-            const isSelected = selected.includes(item);
-            return (
-              <TouchableOpacity
-                onPress={() => toggle(item)}
-                style={[styles.option, isSelected && styles.optionSelected]}
-              >
-                <ThemedText style={styles.optionText}>{item}</ThemedText>
-                <View
-                  style={[
-                    styles.radioOuter,
-                    isSelected && styles.radioOuterSelected,
-                  ]}
-                >
-                  {isSelected ? <View style={styles.radioInner} /> : null}
-                </View>
-              </TouchableOpacity>
-            );
-          }}
+        <Image
+          source={require("../assets/circle_icon.png")}
+          style={styles.logo}
         />
 
-        <ThemedText style={styles.counter}>
-          {selected.length}/3 selected
-        </ThemedText>
-
-        <TouchableOpacity
-          style={styles.continueButton}
-          onPress={handleContinue}
-        >
-          <View style={styles.continueContent}>
-            <ThemedText style={styles.continueText}>Continue</ThemedText>
-            <ThemedText style={styles.arrow}>→</ThemedText>
-          </View>
+        <TouchableOpacity onPress={() => router.push("/(tabs)/home")}>
+          <ThemedText style={styles.skip}>Skip</ThemedText>
         </TouchableOpacity>
       </View>
+
+      {/* Progress */}
+      <View style={styles.progressContainer}>
+        <ThemedText style={styles.stepText}>STEP 4 OF 5</ThemedText>
+        <View style={styles.progressBar}>
+          <View style={styles.progressFill} />
+        </View>
+      </View>
+
+      {/* Content */}
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Title */}
+        <ThemedText style={styles.title}>When do you usually dress up?</ThemedText>
+        <ThemedText style={styles.subtitle}>
+          Select the moments that define your lifestyle so we can curate your
+          wardrobe.
+        </ThemedText>
+
+        {/* Grid */}
+        <View style={styles.grid}>
+          {OCCASIONS.map((occasion) => {
+            const isSelected = selected.includes(occasion.id);
+
+            return (
+              <TouchableOpacity
+                key={occasion.id}
+                style={[
+                  styles.card,
+                  isSelected && styles.cardSelected,
+                ]}
+                onPress={() => toggleOption(occasion.id)}
+              >
+                <ThemedText style={styles.iconText}>{occasion.icon}</ThemedText>
+
+                <ThemedText style={styles.cardLabel}>
+                  {occasion.label}
+                </ThemedText>
+                <ThemedText style={styles.cardSubtitle}>
+                  {occasion.subtitle}
+                </ThemedText>
+
+                {/* Checkmark */}
+                {isSelected && (
+                  <View style={styles.checkCircle}>
+                    <ThemedText style={styles.check}>✓</ThemedText>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        <ThemedText style={styles.multiSelectText}>
+          MULTI: SELECT AS MANY AS YOU LIKE
+        </ThemedText>
+      </ScrollView>
+
+      {/* Bottom Button */}
+      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+        <View style={styles.continueContent}>
+          <ThemedText style={styles.continueText}>Continue</ThemedText>
+          {/* <ThemedText style={styles.nextText}>Next: Fit Preference</ThemedText>
+          <ThemedText style={styles.arrow}>→</ThemedText> */}
+        </View>
+      </TouchableOpacity>
     </ThemedView>
   );
 }
@@ -99,113 +170,195 @@ export default function OccasionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    paddingTop: 130,
-    paddingBottom: 70,
+    backgroundColor: "#fff",
   },
+
+  /* ----------- TOP BAR ----------- */
   topBar: {
-    position: "absolute",
-    top: 0,
-    left: -24,
-    right: -24,
-    height: 84,
-    backgroundColor: "#1a2a32ff",
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-    paddingTop: 18,
+    paddingHorizontal: 20,
+    paddingTop: 50,
   },
-  topBarText: {
-    color: "#fff",
-    fontSize: 32,
-    fontWeight: "600",
+
+  logo: {
+    width: 40,
+    height: 40,
+    alignSelf: "center",
+    marginLeft: 19,
   },
-  content: {
-    flex: 1,
-    marginTop: 40,
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "600",
-    textAlign: "center",
-    marginBottom: 6,
+
+  back: {
+    fontSize: 26,
     color: "#111",
   },
+
+  skip: {
+    fontSize: 14,
+    color: "#777",
+  },
+
+  /* ----------- PROGRESS ----------- */
+  progressContainer: {
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
+
+  stepText: {
+    fontSize: 12,
+    color: "#777",
+    textAlign: "center",
+    fontWeight: "600",
+  },
+
+  progressBar: {
+    height: 3,
+    backgroundColor: "#eee",
+    marginTop: 6,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+
+  progressFill: {
+    width: "80%", // step 4 of 5
+    height: "100%",
+    backgroundColor: "#111",
+  },
+
+  /* ----------- TITLE ----------- */
+  title: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: "#111",
+    marginTop: 10,
+    paddingHorizontal: 20,
+    lineHeight: 40,
+  },
+
   subtitle: {
     fontSize: 14,
-    color: "#444",
-    marginBottom: 18,
-    textAlign: "center",
-  },
-  list: {
-    width: "100%",
-    alignItems: "center",
-  },
-  option: {
-    width: "92%",
-    height: 72,
-    borderWidth: 3,
-    borderColor: "#111",
-    borderRadius: 20,
+    color: "#666",
+    marginTop: 6,
+    marginBottom: 10,
     paddingHorizontal: 20,
-    marginBottom: 12,
-    backgroundColor: "#fff",
+    lineHeight: 20,
+  },
+
+  /* ----------- GRID ----------- */
+  grid: {
     flexDirection: "row",
-    alignItems: "center",
+    flexWrap: "wrap",
     justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginTop: 10,
   },
-  optionSelected: {
-    borderColor: "#2b3133",
-  },
-  optionText: {
-    fontSize: 18,
-    color: "#111",
-  },
-  radioOuter: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+
+  card: {
+    width: "48%",
+    borderRadius: 16,
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: "#ffffff",
     borderWidth: 2,
-    borderColor: "#111",
+    borderColor: "#dbd5d5",
     alignItems: "center",
     justifyContent: "center",
+
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  radioOuterSelected: {
-    borderColor: "#2b3133",
+
+  cardSelected: {
+    backgroundColor: "#f0f0f0",
+    borderColor: "#111",
   },
-  radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#2b3133",
+
+  iconText: {
+    fontSize: 40,
+    marginBottom: 8,
   },
-  counter: {
-    marginTop: 6,
-    color: "#111",
+
+  cardLabel: {
     fontSize: 14,
-    marginBottom: 12,
+    fontWeight: "700",
+    color: "#111",
+    textAlign: "center",
+    marginBottom: 4,
   },
+
+  cardSubtitle: {
+    fontSize: 11,
+    color: "#777",
+    textAlign: "center",
+    fontWeight: "400",
+  },
+
+  /* ----------- CHECKMARK ----------- */
+  checkCircle: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#111",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  check: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  /* ----------- MULTI SELECT TEXT ----------- */
+  multiSelectText: {
+    fontSize: 11,
+    color: "#999",
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 20,
+    fontWeight: "600",
+    letterSpacing: 1,
+  },
+
+  /* ----------- BUTTON ----------- */
   continueButton: {
-    width: "80%",
     height: 64,
     backgroundColor: "#2b3133",
     borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 8,
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
+
   continueContent: {
     flexDirection: "row",
     alignItems: "center",
   },
+
   continueText: {
     color: "#fff",
-    fontSize: 20,
-    marginRight: 10,
+    fontSize: 16,
+    fontWeight: "600",
+    marginRight: 4,
   },
+
+  nextText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "500",
+    marginRight: 8,
+  },
+
   arrow: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 18,
+    fontWeight: "700",
   },
 });

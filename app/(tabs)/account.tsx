@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Image, StyleSheet, View, Pressable, Platform } from 'react-native';
+import { Alert, Image, StyleSheet, View, Pressable, Platform, Text, TouchableOpacity } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -9,32 +9,35 @@ import { ThemedText } from '../../components/themed-text';
 import { ThemedView } from '../../components/themed-view';
 import { Images } from '../../constants/images';
 
-const MENU = [
-  { key: 'edit-profile', label: 'Edit profile', icon: 'bookmark-outline', route: '/profileDetails' },
-  { key: 'preferences', label: 'Edit preferences', icon: 'settings-outline', route: '/createProfile' },
-  { key: 'support', label: 'Support', icon: 'help-circle-outline' },
-  { key: 'feedback', label: 'Feedback', icon: 'chatbubble-outline' },
-  { key: 'logout', label: 'Log out', icon: 'power-outline' },
-  { key: 'delete', label: 'Delete account', icon: 'trash-outline' },
-];
+type SectionLink = {
+  key: string;
+  label: string;
+  subLabel?: string;
+  icon: string;
+  route?: string;
+  action?: () => void;
+};
 
-function MenuItem({ item, onPress, textColor, iconColor, borderColor, chevColor, rippleColor, iconBg }: any) {
+function SectionItem({ item, onPress, colors }: { item: SectionLink; onPress: (item: SectionLink) => void; colors: any }) {
   return (
     <Pressable
       onPress={() => onPress(item)}
-      android_ripple={{ color: rippleColor }}
+      android_ripple={{ color: colors.ripple }}
       accessibilityRole="button"
       accessibilityLabel={item.label}
       hitSlop={8}
       style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
     >
-      <View style={[styles.iconWrap, { borderColor, backgroundColor: iconBg, ...(Platform.OS === 'ios' ? styles.iconShadow : {}) }]}>
-        <Ionicons name={item.icon as any} size={22} color={iconColor} />
+      <View style={[styles.iconWrap, { borderColor: colors.border, backgroundColor: colors.iconBg, ...(Platform.OS === 'ios' ? styles.iconShadow : {}) }]}>
+        <Ionicons name={item.icon as any} size={20} color={colors.icon} />
       </View>
 
-      <ThemedText style={[styles.menuLabel, { color: textColor }]}>{item.label}</ThemedText>
+      <View style={styles.menuText}>
+        <ThemedText style={[styles.menuLabel, { color: colors.text }]}>{item.label}</ThemedText>
+        {item.subLabel ? <ThemedText style={styles.menuSubLabel}>{item.subLabel}</ThemedText> : null}
+      </View>
 
-      <Ionicons name="chevron-forward" size={20} color={chevColor} style={styles.chev} />
+      <Ionicons name="chevron-forward" size={20} color={colors.chev} style={styles.chev} />
     </Pressable>
   );
 }
@@ -42,9 +45,31 @@ function MenuItem({ item, onPress, textColor, iconColor, borderColor, chevColor,
 import { useUserProfile } from '../../context/UserProfileContext';
 import * as SecureStore from 'expo-secure-store';
 
+const stylePreferences: SectionLink[] = [
+  { key: 'body-type', label: 'Body Type & Measurements', subLabel: 'Hourglass · 5’7” · Size 6', icon: 'person-circle-outline', route: '/profileSetup-1styleVibe' },
+  { key: 'fit', label: 'Fit & Silhouette', subLabel: 'Preference: Oversized & Relaxed', icon: 'resize-outline', route: '/profileSetup-5fitType' },
+  { key: 'color', label: 'Color Palette', subLabel: 'Neutrals, Earth Tones, Deep Teal', icon: 'color-palette-outline', route: '/profileSetup-2colorSelection' },
+];
+
+const personalActivity: SectionLink[] = [
+  { key: 'wishlist', label: 'Wishlist & Curated', subLabel: '42 items saved', icon: 'heart-outline', route: '/wishlist' },
+  { key: 'recent', label: 'Recently Viewed', subLabel: '12 items', icon: 'time-outline' },
+];
+
+const supportLinks: SectionLink[] = [
+  { key: 'help', label: 'Help Center', icon: 'help-circle-outline' },
+  { key: 'feedback', label: 'Send Feedback', icon: 'chatbubble-ellipses-outline' },
+  { key: 'report', label: 'Report an Issue', icon: 'alert-circle-outline' },
+];
+
+const systemLinks: SectionLink[] = [
+  { key: 'notifications', label: 'Notifications', icon: 'notifications-outline' },
+  { key: 'privacy', label: 'Privacy & Security', icon: 'shield-checkmark-outline' },
+];
+
 export default function Account() {
   const router = useRouter();
-  const { fullName, birthdate, resetProfile } = useUserProfile();
+  const { name, age, resetProfile } = useUserProfile();
 
   const textColor = useThemeColor({}, 'text');
   const iconColor = useThemeColor({}, 'icon');
@@ -65,7 +90,7 @@ export default function Account() {
   };
 
 
-  const handlePress = (item: typeof MENU[number]) => {
+  const handlePress = (item: SectionLink) => {
     if (item.route) {
       router.push(item.route as any);
       return;
@@ -110,32 +135,91 @@ export default function Account() {
 
   return (
     <ThemedView style={styles.container}>
-
       <ScrollView contentContainerStyle={styles.content}>
-        <ThemedText style={styles.title}>Settings</ThemedText>
+        <View style={styles.pageHeader}>
+          <View style={styles.headerSide}>
+            <Image source={Images.circleIcon} style={styles.logo} resizeMode="contain" />
+          </View>
+
+          <Text style={styles.pageTitle}>ACCOUNT</Text>
+
+          <View style={styles.headerSide}>
+            <TouchableOpacity style={styles.filterButton} onPress={() => { }} activeOpacity={0.7}>
+              <Ionicons name="options-outline" size={20} color="#243f70" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <View style={styles.profileWrap}>
           <View style={styles.avatarOuter}>
             <Image source={Images.logo2} style={styles.avatar} />
           </View>
-          <ThemedText style={styles.name}>{fullName ? fullName : 'A'}{birthdate ? `, ${computeAge(birthdate)}` : ''}</ThemedText>
+          <ThemedText style={styles.name}>{name ? name : 'Sienna Westbrook'}</ThemedText>
+          <ThemedText style={styles.subtitle}>Premium Member since Oct 2023</ThemedText>
+          <TouchableOpacity style={styles.editButton} onPress={() => router.push('/profileDetails' as any)}>
+            <Text style={styles.editButtonText}>Edit Profile</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.menu}>
-          {MENU.map((item) => (
-            <MenuItem
-              key={item.key}
-              item={item}
-              onPress={handlePress}
-              textColor={textColor}
-              iconColor={iconColor}
-              borderColor={borderColor}
-              chevColor={chevColor}
-              rippleColor={rippleColor}
-              iconBg={iconBg}
-            />
+        <View style={styles.cardGroup}>
+          <Text style={styles.sectionLabel}>STYLE PREFERENCES</Text>
+          {stylePreferences.map((item) => (
+            <SectionItem key={item.key} item={item} onPress={handlePress} colors={{
+              text: textColor,
+              icon: iconColor,
+              border: borderColor,
+              chev: chevColor,
+              ripple: rippleColor,
+              iconBg,
+            }} />
           ))}
-        </View> 
+        </View>
+
+        <View style={styles.cardGroup}>
+          <Text style={styles.sectionLabel}>PERSONAL ACTIVITY</Text>
+          {personalActivity.map((item) => (
+            <SectionItem key={item.key} item={item} onPress={handlePress} colors={{
+              text: textColor,
+              icon: iconColor,
+              border: borderColor,
+              chev: chevColor,
+              ripple: rippleColor,
+              iconBg,
+            }} />
+          ))}
+        </View>
+
+        <View style={styles.cardGroup}>
+          <Text style={styles.sectionLabel}>SUPPORT</Text>
+          {supportLinks.map((item) => (
+            <SectionItem key={item.key} item={item} onPress={handlePress} colors={{
+              text: textColor,
+              icon: iconColor,
+              border: borderColor,
+              chev: chevColor,
+              ripple: rippleColor,
+              iconBg,
+            }} />
+          ))}
+        </View>
+
+        <View style={styles.cardGroup}>
+          <Text style={styles.sectionLabel}>SYSTEM</Text>
+          {systemLinks.map((item) => (
+            <SectionItem key={item.key} item={item} onPress={handlePress} colors={{
+              text: textColor,
+              icon: iconColor,
+              border: borderColor,
+              chev: chevColor,
+              ripple: rippleColor,
+              iconBg,
+            }} />
+          ))}
+        </View>
+
+        <TouchableOpacity style={styles.logout} onPress={() => handlePress({ key: 'logout', label: 'Log out', icon: 'power-outline' })}>
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
       </ScrollView>
     </ThemedView>
   );
@@ -144,22 +228,57 @@ export default function Account() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#ffffff',
   },
   content: {
-
-    paddingHorizontal: 28,
-    paddingTop: 28,
-    paddingBottom: 120,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 28,
     alignItems: 'center',
   },
-  title: {
-    fontSize: 36,
-    fontWeight: '700',
-    marginBottom: 18,
+  pageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  headerSide: {
+    width: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 40,
+    height: 40,
+  },
+  pageTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#1d2c4f',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+    flex: 1,
+  },
+  filterButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e4e9f8',
   },
   profileWrap: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 20,
+    width: '100%',
+    backgroundColor: '#fff',
+    paddingVertical: 18,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   avatarOuter: {
     width: 110,
@@ -185,33 +304,73 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 22,
     fontWeight: '700',
+    marginBottom: 4,
   },
-  menu: {
+  subtitle: {
+    fontSize: 14,
+    color: '#6b7a99',
+    marginBottom: 12,
+  },
+  editButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#c8d1e7',
+    borderRadius: 24,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  editButtonText: {
+    color: '#4d5f86',
+    fontWeight: '700',
+  },
+  cardGroup: {
     width: '100%',
-    marginTop: 2,
+    paddingHorizontal: 2,
+    paddingTop: 10,
+    marginBottom: 8,
+  },
+  sectionLabel: {
+    color: '#576483',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 8,
+    marginLeft: 6,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 6,
+    paddingVertical: 15,
+    paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: '#eeeff4',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 8,
   },
   menuItemPressed: {
-    opacity: 0.75,
+    opacity: 0.85,
     transform: [{ scale: 0.998 }],
   },
   iconWrap: {
     width: 44,
     height: 44,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E6E6E6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
     backgroundColor: '#fff',
+  },
+  menuText: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  menuSubLabel: {
+    color: '#7e89a4',
+    fontSize: 12,
+    marginTop: 3,
   },
   iconShadow: {
     shadowColor: '#000',
@@ -226,5 +385,21 @@ const styles = StyleSheet.create({
   },
   chev: {
     marginLeft: 6,
+  },
+  logout: {
+    marginTop: 12,
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#ffe1e6',
+  },
+  logoutText: {
+    color: '#e63950',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });

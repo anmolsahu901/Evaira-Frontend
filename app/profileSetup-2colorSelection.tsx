@@ -69,7 +69,7 @@ export default function FavoriteColorsScreen() {
       {/* Header (taken from `profileSetup-1styleVibe.tsx` layout) */}
       <View>
         <View style={styles.topBar}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.back()}>
             <ThemedText style={styles.back}>‹</ThemedText>
           </TouchableOpacity>
 
@@ -81,7 +81,7 @@ export default function FavoriteColorsScreen() {
         </View>
 
         <View style={styles.progressContainer}>
-            <ThemedText style={styles.stepText}>STEP 1 OF 5</ThemedText>
+            <ThemedText style={styles.stepText}>STEP 2 OF 5</ThemedText>
             <View style={styles.progressBar}>
               <View style={styles.progressFill} />
             </View>

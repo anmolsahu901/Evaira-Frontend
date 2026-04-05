@@ -7,24 +7,24 @@ import { ThemedView } from '../components/themed-view';
 import { useUserProfile } from '../context/UserProfileContext';
 
 const STYLE_VIBES = [
-    'MINIMAL',
-    'STREETWEAR',
-    'CASUAL',
-    'CLASSIC',
-    'OLD_MONEY',
-    'SPORTY',
-    'TRENDY',
-    'FORMAL',
-    
+  'MINIMAL',
+  'STREETWEAR',
+  'CASUAL',
+  'CLASSIC',
+  'OLD_MONEY',
+  'SPORTY',
+  'TRENDY',
+  'FORMAL',
+
 ];
 
 const COLORS = [
-    '#ecf0f1',
-    '#f6e6c3',
-    '#d7e8ff',
-    '#e5d6ff',
-    '#f8d7d7',
-    '#d7f0dd',
+  '#ecf0f1',
+  '#f6e6c3',
+  '#d7e8ff',
+  '#e5d6ff',
+  '#f8d7d7',
+  '#d7f0dd',
 ];
 
 const STYLE_IMAGES: Record<string, any> = {
@@ -38,127 +38,127 @@ const STYLE_IMAGES: Record<string, any> = {
   TRENDY: require('../assets/styles/trendy.jpg'),
 };
 
-    //   MINIMAL,    // clean, plain, neutral
-    // CASUAL,
-    // CLASSIC,
-    // OLD_MONEY,// timeless, polos, chinos, oxfords
-    // FORMAL,     // sharp, tailored, dressy
-    // STREETWEAR,     // streetwear: graphics, bold, urban
-    // SPORTY,     // athleisure / performance look
-    // TRENDY, 
+//   MINIMAL,    // clean, plain, neutral
+// CASUAL,
+// CLASSIC,
+// OLD_MONEY,// timeless, polos, chinos, oxfords
+// FORMAL,     // sharp, tailored, dressy
+// STREETWEAR,     // streetwear: graphics, bold, urban
+// SPORTY,     // athleisure / performance look
+// TRENDY, 
 
 export default function StyleVibe1Screen() {
-    const router = useRouter();
-    const { setStyleVibe } = useUserProfile();
-    const [selected, setSelected] = useState<string[]>([]);
+  const router = useRouter();
+  const { setStyleVibes } = useUserProfile();
+  const [selected, setSelected] = useState<string[]>([]);
 
-    const toggleOption = (item: string) => {
-        setSelected((current) =>
-            current.includes(item) ? current.filter((i) => i !== item) : [...current, item]
-        );
-    };
-
-    const handleContinue = async () => {
-        if (!selected.length) {
-            alert('Select at least one style vibe to continue.');
-            return;
-        }
-
-        setStyleVibe(selected);
-        router.push('/profileSetup-2colorSelection' as any);
-    };
-
-    const handleSurpriseMe = () => {
-  // placeholder – you can implement later
-  console.log("Surprise me clicked");
-};
-
-    return (
-        <ThemedView style={styles.container}>
-
-  {/* Top Bar */}
-  <View style={styles.topBar}>
-    <TouchableOpacity>
-      <ThemedText style={styles.back}>‹</ThemedText>
-    </TouchableOpacity>
-
-    <Image source={require('../assets/circle_icon.png')} style={styles.logo} />
-
-    <TouchableOpacity>
-      <ThemedText style={styles.skip}>Skip</ThemedText>
-    </TouchableOpacity>
-  </View>
-
-  {/* Progress */}
-  <View style={styles.progressContainer}>
-    <ThemedText style={styles.stepText}>STEP 1 OF 5</ThemedText>
-    <View style={styles.progressBar}>
-      <View style={styles.progressFill} />
-    </View>
-  </View>
-
-
-
-  {/* Grid */}
-  <ScrollView showsVerticalScrollIndicator={false}>
-  {/* Title */}
-  <ThemedText style={styles.title}>What styles feel like you?</ThemedText>
-  <ThemedText style={styles.subtitle}>
-    Choose a few. Your AI stylist will learn more about your unique taste over time.
-  </ThemedText>
-
-    <View style={styles.grid}>
-
-      {STYLE_VIBES.map((style) => {
-        const isSelected = selected.includes(style);
-
-        return (
-          <TouchableOpacity
-            key={style}
-            style={styles.card}
-            onPress={() => toggleOption(style)}
-          >
-            <Image source={STYLE_IMAGES[style]} style={styles.image} />
-
-            {/* Overlay */}
-            <View style={styles.overlay} />
-
-            {/* Name */}
-            <ThemedText style={styles.cardText}>
-              {style.replace('_', ' ')}
-            </ThemedText>
-
-            {/* Tick */}
-            {isSelected && (
-              <View style={styles.checkCircle}>
-                <ThemedText style={styles.check}>✓</ThemedText>
-              </View>
-            )}
-          </TouchableOpacity>
-        );
-      })}
-
-    </View>
-
-    {/* Surprise Me */}
-    <TouchableOpacity style={styles.surprise} onPress={handleSurpriseMe}>
-      <ThemedText style={styles.surpriseText}>Not sure? Surprise me</ThemedText>
-    </TouchableOpacity>
-
-  </ScrollView>
-
-  {/* Bottom Button */}
-  <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-    <View style={styles.continueContent}>
-      <ThemedText style={styles.continueText}>
-        Continue with {selected.length || 1} Styles
-      </ThemedText>
-      <ThemedText style={styles.arrow}>→</ThemedText>
-    </View>
-  </TouchableOpacity>
-
-</ThemedView>
+  const toggleOption = (item: string) => {
+    setSelected((current) =>
+      current.includes(item) ? current.filter((i) => i !== item) : [...current, item]
     );
+  };
+
+  const handleContinue = async () => {
+    if (!selected.length) {
+      alert('Select at least one style vibe to continue.');
+      return;
+    }
+
+    setStyleVibes(selected);
+    router.push('/profileSetup-2colorSelection' as any);
+  };
+
+  const handleSurpriseMe = () => {
+    // placeholder – you can implement later
+    console.log("Surprise me clicked");
+  };
+
+  return (
+    <ThemedView style={styles.container}>
+
+      {/* Top Bar */}
+      <View style={styles.topBar}>
+        <TouchableOpacity>
+          <ThemedText style={styles.back}>‹</ThemedText>
+        </TouchableOpacity>
+
+        <Image source={require('../assets/circle_icon.png')} style={styles.logo} />
+
+        <TouchableOpacity>
+          <ThemedText style={styles.skip}>Skip</ThemedText>
+        </TouchableOpacity>
+      </View>
+
+      {/* Progress */}
+      <View style={styles.progressContainer}>
+        <ThemedText style={styles.stepText}>STEP 1 OF 5</ThemedText>
+        <View style={styles.progressBar}>
+          <View style={styles.progressFill} />
+        </View>
+      </View>
+
+
+
+      {/* Grid */}
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Title */}
+        <ThemedText style={styles.title}>What styles feel like you?</ThemedText>
+        <ThemedText style={styles.subtitle}>
+          Choose a few. Your AI stylist will learn more about your unique taste over time.
+        </ThemedText>
+
+        <View style={styles.grid}>
+
+          {STYLE_VIBES.map((style) => {
+            const isSelected = selected.includes(style);
+
+            return (
+              <TouchableOpacity
+                key={style}
+                style={styles.card}
+                onPress={() => toggleOption(style)}
+              >
+                <Image source={STYLE_IMAGES[style]} style={styles.image} />
+
+                {/* Overlay */}
+                <View style={styles.overlay} />
+
+                {/* Name */}
+                <ThemedText style={styles.cardText}>
+                  {style.replace('_', ' ')}
+                </ThemedText>
+
+                {/* Tick */}
+                {isSelected && (
+                  <View style={styles.checkCircle}>
+                    <ThemedText style={styles.check}>✓</ThemedText>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+
+        </View>
+
+        {/* Surprise Me */}
+        <TouchableOpacity style={styles.surprise} onPress={handleSurpriseMe}>
+          <ThemedText style={styles.surpriseText}>Not sure? Surprise me</ThemedText>
+        </TouchableOpacity>
+
+      </ScrollView>
+
+      {/* Bottom Button */}
+      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+        <View style={styles.continueContent}>
+          <ThemedText style={styles.continueText}>
+            Continue with {selected.length || 1} Styles
+          </ThemedText>
+          <ThemedText style={styles.arrow}>→</ThemedText>
+        </View>
+      </TouchableOpacity>
+
+    </ThemedView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   /* ---------------- BUTTON ---------------- */
   continueButton: {
     height: 64,
-    backgroundColor: '#2b3133',
+    backgroundColor: '#000000',
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',

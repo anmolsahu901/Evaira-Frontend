@@ -104,7 +104,7 @@ export default function Home() {
       try {
         const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'LIKE' });
         if (!res.ok) throw new Error('network');
-        
+
         // Update wishlist context to reflect the like
         wishlist.addLikedProduct(product.id);
         console.log('[Home] Product liked and added to wishlist context:', product.id);
@@ -136,7 +136,7 @@ export default function Home() {
       } catch (e) {
         Alert.alert('Error', 'Failed to send dislike to server.');
         console.warn('Dislike API failed', e);
-      } 
+      }
     }
 
     scheduleClearUndo();
@@ -156,7 +156,7 @@ export default function Home() {
       try {
         const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'UNLIKE' });
         if (!res.ok) throw new Error('network');
-        
+
         // Remove from wishlist context
         wishlist.removeLikedProduct(product.id);
         console.log('[Home] Product unliked and removed from wishlist context:', product.id);
@@ -182,7 +182,7 @@ export default function Home() {
 
   const onLayout = (event: LayoutChangeEvent) => {
     setContainerHeight(event.nativeEvent.layout.height);
-  }; 
+  };
 
   // Inline SVG data URI for a curved-left arrow (encoded). This will render without requiring an external file.
   const undoSvg = encodeURIComponent(`
@@ -196,8 +196,51 @@ export default function Home() {
   const [imageLoadError, setImageLoadError] = useState(false);
 
   return (
-    <View style={styles.container} onLayout={onLayout}>
+    <View style={styles.container}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+
+      {/* FlatList Container - Full Screen */}
+      <View style={styles.flatListContainer} onLayout={onLayout}>
+        {containerHeight > 0 && (
+          <FlatList
+            data={products}
+            renderItem={renderItem}
+            keyExtractor={item => item.id}
+            pagingEnabled
+            showsVerticalScrollIndicator={false}
+            initialNumToRender={1}
+            windowSize={3}
+            extraData={products}
+            ListEmptyComponent={() => (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: 'white', fontSize: 18 }}>No more products</Text>
+              </View>
+            )}
+            getItemLayout={(_data, index) => ({
+              length: containerHeight,
+              offset: containerHeight * index,
+              index,
+            })}
+          />
+        )}
+      </View>
+
+      {/* Header with Logo and Search/Cart Icons - Overlay on Top */}
+      <View style={styles.headerContainer}>
+        <Image
+          source={require('../../assets/circle_logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        <View style={styles.headerIcons}>
+          <TouchableOpacity style={styles.headerIcon}>
+            <Ionicons name="search" size={24} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerIcon}>
+            <Ionicons name="cart" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {swipedStack.length > 0 && (
         <View style={styles.undoContainer} pointerEvents="box-none">
@@ -216,29 +259,6 @@ export default function Home() {
           </TouchableOpacity>
         </View>
       )}
-
-      {containerHeight > 0 && (
-        <FlatList
-          data={products}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          pagingEnabled
-          showsVerticalScrollIndicator={false}
-          initialNumToRender={1}
-          windowSize={3}
-          extraData={products}
-          ListEmptyComponent={() => (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: 'white', fontSize: 18 }}>No more products</Text>
-            </View>
-          )}
-          getItemLayout={(_data, index) => ({
-            length: containerHeight,
-            offset: containerHeight * index,
-            index,
-          })}
-        />
-      )}
     </View>
   );
 }
@@ -248,11 +268,44 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
+  flatListContainer: {
+    flex: 1,
+  },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
+    backgroundColor: 'transparent',
+    zIndex: 5,
+  },
+  logo: {
+    width: 40,
+    height: 40,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  headerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   undoContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 40,
+    top: 100,
     alignItems: 'center',
     zIndex: 10,
     paddingTop: 6,

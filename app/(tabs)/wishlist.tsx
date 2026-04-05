@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import WishlistCard, { WishlistItem } from '../../components/ui/wishlist-card';
 import { getWishlistData, unlikeProduct, unsaveProduct } from '../../lib/api';
 import { useWishlist } from '../../context/WishlistContext';
@@ -118,7 +120,7 @@ export default function Wishlist() {
   const onRemove = async (productId: string | number) => {
     try {
       console.log('[Wishlist] Removing item:', { productId, filter });
-      
+
       if (!productId) {
         console.warn('[Wishlist] productId is missing, cannot remove from backend');
         // Still remove from UI
@@ -127,7 +129,7 @@ export default function Wishlist() {
       }
 
       // Call the appropriate API method based on filter
-      const result = filter === 'Saved' 
+      const result = filter === 'Saved'
         ? await unsaveProduct(productId)
         : await unlikeProduct(productId);
 
@@ -152,6 +154,22 @@ export default function Wishlist() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.pageHeader}>
+        <View style={styles.headerSide}>
+          <Image
+            source={require('../../assets/circle_logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
+        <Text style={styles.pageTitle}>WISHLIST</Text>
+        <View style={styles.headerSide}>
+          <TouchableOpacity style={styles.filterButton} activeOpacity={0.7}>
+            <Ionicons name="options-outline" size={20} color="#243f70" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <View style={styles.chipsRow}>
         <FlatList
           data={chips}
@@ -185,9 +203,11 @@ export default function Wishlist() {
           keyExtractor={(it) => String(it.id)}
           numColumns={2}
           columnWrapperStyle={styles.row}
-          contentContainerStyle={{ paddingBottom: 80, paddingTop: 8 }}
+          contentContainerStyle={{ paddingBottom: 80, paddingTop: 8, paddingHorizontal: 8 }}
           renderItem={({ item }) => (
-            <WishlistCard item={item} onRemove={onRemove} onMoveToBag={onMoveToBag} />
+            <View style={styles.cardWrapper}>
+              <WishlistCard item={item} onRemove={onRemove} onMoveToBag={onMoveToBag} />
+            </View>
           )}
           ListEmptyComponent={() => (
             <View style={styles.empty}>
@@ -204,6 +224,41 @@ export default function Wishlist() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9f9fb' },
+  pageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
+    backgroundColor: '#ffffff',
+    borderBottomColor: '#efeff4',
+    borderBottomWidth: 1,
+  },
+  headerSide: {
+    width: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 40,
+    height: 40,
+  },
+  pageTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#1d2c4f',
+  },
+  filterButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e4e9f8',
+  },
   chipsRow: { height: 45, justifyContent: 'center' },
   chip: {
     paddingHorizontal: 16,
@@ -216,19 +271,24 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   chipActive: {
-    borderColor: '#ff2b54',
-    backgroundColor: '#fff0f4',
+    borderColor: '#000000',
+    backgroundColor: '#000000c7',
   },
   chipText: {
-    color: '#333',
+    color: '#000000',
     fontWeight: '600',
   },
   chipTextActive: {
-    color: '#ff2b54',
+    color: '#ffffff',
   },
   row: {
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    paddingHorizontal: 2,
+    marginBottom: 0,
+  },
+  cardWrapper: {
+    width: '48%',
+    marginVertical: 3,
   },
   empty: { padding: 24, alignItems: 'center' },
   loaderContainer: {

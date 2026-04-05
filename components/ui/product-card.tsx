@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   Alert,
   Share,
+  Linking,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { sendLikeNotification,saveProduct,shareProduct,openProduct,likeProduct,unlikeProduct,dislikeProduct } from '../../lib/api';
+import { sendLikeNotification, saveProduct, shareProduct, openProduct, likeProduct, unlikeProduct, dislikeProduct } from '../../lib/api';
 
 export interface Product {
   id: string;
@@ -62,7 +64,7 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
       const actionType = liked ? 'UNLIKE' : 'LIKE';
       const res = await sendLikeNotification({ productId: Number(product.id), actionType });
       if (!res.ok) throw new Error('network');
-      
+
       // Notify parent component of like status change
       onLike?.(product.id, newLikedState);
     } catch (e) {
@@ -90,7 +92,7 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
       const actionType = saved ? 'UNSAVE' : 'SAVE';
       const res = await sendLikeNotification({ productId: Number(product.id), actionType });
       if (!res.ok) throw new Error('network');
-      
+
       // Notify parent component of save status change
       onSave?.(product.id, newSavedState);
     } catch (e) {
@@ -120,7 +122,7 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
       } else {
         // Update share count on successful share
         setShareCount(c => c + 1);
-        
+
         // Send share event to backend
         try {
           const res = await shareProduct(Number(product.id));
@@ -135,6 +137,26 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
     }
   };
 
+  const handleViewDetails = async () => {
+    if (product.deeplinkUrl) {
+      try {
+        const canOpen = await Linking.canOpenURL(product.deeplinkUrl);
+        if (canOpen) {
+          await Linking.openURL(product.deeplinkUrl);
+          console.log('Deeplink opened from View Details:', product.deeplinkUrl);
+        } else {
+          Alert.alert('Unable to Open', 'Cannot open the product details at this time.');
+          console.warn('Cannot open deeplink:', product.deeplinkUrl);
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Failed to open product details.');
+        console.error('Error opening deeplink:', error);
+      }
+    } else {
+      Alert.alert('Info', 'Product details are not available.');
+    }
+  };
+
   return (
     <View style={styles.cardContainer}>
       <ImageBackground
@@ -144,6 +166,22 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
       />
 
       <View style={styles.container}>
+        {/* Top Gradient - Simple vertical fade */}
+        <LinearGradient
+          colors={['rgba(0, 0, 0, 0.8)', 'rgba(0, 0, 0, 0.43)', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.topGradientOverlay}
+        />
+
+        {/* Gradient overlay at the bottom for better text visibility */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0, 0, 0, 0.6)', 'rgba(0, 0, 0, 0.9)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.gradientOverlay}
+        />
+
         <View style={styles.overlay}>
           <View style={styles.productInfo}>
             <Text style={styles.productName}>{product.name}</Text>
@@ -154,38 +192,30 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
           </View>
 
           <View style={styles.socialIcons}>
-            <TouchableOpacity style={styles.iconContainer} onPress={handleLike}>
-              <View style={styles.iconCircle}>
-                <Ionicons name={liked ? 'heart' : 'heart-outline'} size={30} color={liked ? '#ff6b78' : 'white'} />
-              </View>
+            <TouchableOpacity style={styles.iconButton} onPress={handleLike}>
+              <Ionicons name={liked ? 'heart' : 'heart-outline'} size={26} color={liked ? '#ff6b78' : 'white'} />
               <Text style={styles.iconText}>{formatCount(likeCount)}</Text>
             </TouchableOpacity>
 
-            {/* Comments UI temporarily disabled. Re-enable later if needed. */}
-            {/**
-            <TouchableOpacity style={styles.iconContainer}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="chatbubble-outline" size={26} color="white" />
-              </View>
-              <Text style={styles.iconText}>{product.comments}</Text>
-            </TouchableOpacity>
-            */}
-
-            <TouchableOpacity style={styles.iconContainer} onPress={handleShare}>
-              <View style={styles.iconCircle}>
-                <Ionicons name="paper-plane-outline" size={30} color="white" />
-              </View>
+            <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
+              <Ionicons name="paper-plane-outline" size={26} color="white" />
               <Text style={styles.iconText}>{formatCount(shareCount)}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.iconContainer} onPress={handleSave}>
-              <View style={styles.iconCircle}>
-                <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={30} color={saved ? '#ffd700' : 'white'} />
-              </View>
+            <TouchableOpacity style={styles.iconButton} onPress={handleSave}>
+              <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={26} color={saved ? '#ffd700' : 'white'} />
               <Text style={styles.iconText}>{formatCount(bookmarkCount)}</Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* View Details Button - Centered at Bottom */}
+        <TouchableOpacity
+          style={styles.viewDetailsButton}
+          onPress={handleViewDetails}
+        >
+          <Text style={styles.viewDetailsText}>View Details</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -194,21 +224,38 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
 const styles = StyleSheet.create({
   cardContainer: {
     width: '100%',
-    height: '100%', 
+    height: '100%',
     backgroundColor: '#000',
   },
   container: {
     flex: 1,
     justifyContent: 'flex-end',
   },
+  topGradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '10%',
+    zIndex: 1,
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '60%',
+    zIndex: 1,
+  },
   overlay: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     paddingHorizontal: 20,
-    paddingBottom: 40, // Adjusted for bottom navigation
+    paddingBottom: 100,
     paddingTop: 40,
     backgroundColor: 'transparent',
+    zIndex: 2,
   },
   productInfo: {
     flex: 1,
@@ -234,27 +281,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     opacity: 0.95,
+    marginBottom: 12,
+  },
+  viewDetailsButton: {
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    right: 20,
+    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  viewDetailsText: {
+    color: '#000',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   socialIcons: {
     alignItems: 'center',
     marginLeft: 8,
+    gap: 20,
   },
-  iconContainer: {
-    alignItems: 'center',
-    marginBottom: 22,
-  },
-  iconCircle: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: 'rgba(2, 0, 0, 0.08)',
+  iconButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 20,
   },
   iconText: {
     color: '#fff',
-    marginTop: 6,
-    fontSize: 12,
-    opacity: 0.95,
+    marginTop: 8,
+    fontSize: 11,
+    fontWeight: '600',
+    opacity: 0.9,
   },
 });

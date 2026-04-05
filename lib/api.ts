@@ -21,6 +21,7 @@ const GET_PRODUCTS_URL = 'http://192.168.1.7:8080/api/user/products/getAllProduc
 const ACTIONS_URL = 'http://192.168.1.7:8080/api/actions'; // Like/Unlike endpoint
 const PRODUCT_BASED_ON_USER_ACTIONS_URL = 'http://192.168.1.7:8080/api/actions/basedOnUserActions'; // New endpoint for product recommendations based on user actions
 const WISHLIST_URL = 'http://192.168.1.7:8080/api/actions/getWishlistData';
+const VALIDATE_TOKEN_URL = 'http://192.168.1.7:8080/api/profile/tokenValidation';
 
 // Development mock toggle:
 // - By default, mocks are enabled in dev (__DEV__)
@@ -209,8 +210,8 @@ export async function createUserProfile(profileData: any): Promise<ApiResult> {
 // Returns true if token is valid (not expired)
 // Returns false if token is expired (401) or invalid
 export async function validateToken(): Promise<boolean> {
-  const result = await authenticatedFetch(GET_PRODUCTS_URL, {
-    method: 'GET',
+  const result = await authenticatedFetch(VALIDATE_TOKEN_URL, {
+    method: 'POST',
   });
 
   // If 401: token is expired or invalid
