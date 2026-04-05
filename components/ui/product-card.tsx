@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Text,
   View,
   StyleSheet,
   ImageBackground,
   TouchableOpacity,
+  Pressable,
+  Animated,
   Alert,
   Share,
   Linking,
@@ -12,6 +14,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { sendLikeNotification, saveProduct, shareProduct, openProduct, likeProduct, unlikeProduct, dislikeProduct } from '../../lib/api';
+
+const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export interface Product {
   id: string;
@@ -42,6 +46,18 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
   const [saved, setSaved] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(parseInt(product.bookmarks) || 0);
   const [shareCount, setShareCount] = useState(parseInt(product.shares) || 0);
+  const [contentVisible, setContentVisible] = useState(true);
+  const overlayOpacity = useRef(new Animated.Value(1)).current;
+
+  const toggleOverlay = () => {
+    const nextValue = contentVisible ? 0 : 1;
+    Animated.timing(overlayOpacity, {
+      toValue: nextValue,
+      duration: 260,
+      useNativeDriver: true,
+    }).start();
+    setContentVisible(!contentVisible);
+  };
 
   const formatCount = (n: number) => {
     if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -165,24 +181,24 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
         resizeMode="cover"
       />
 
-      <View style={styles.container}>
+      <Pressable style={styles.container} onPress={toggleOverlay}>
         {/* Top Gradient - Simple vertical fade */}
-        <LinearGradient
+        <AnimatedLinearGradient
           colors={['rgba(0, 0, 0, 0.8)', 'rgba(0, 0, 0, 0.43)', 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-          style={styles.topGradientOverlay}
+          style={[styles.topGradientOverlay, { opacity: overlayOpacity }]}
         />
 
         {/* Gradient overlay at the bottom for better text visibility */}
-        <LinearGradient
+        <AnimatedLinearGradient
           colors={['transparent', 'rgba(0, 0, 0, 0.6)', 'rgba(0, 0, 0, 0.9)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-          style={styles.gradientOverlay}
+          style={[styles.gradientOverlay, { opacity: overlayOpacity }]}
         />
 
-        <View style={styles.overlay}>
+        <Animated.View pointerEvents={contentVisible ? 'auto' : 'none'} style={[styles.overlay, { opacity: overlayOpacity }]}>
           <View style={styles.productInfo}>
             <Text style={styles.productName}>{product.name}</Text>
             <Text style={styles.productPrice}>{product.price}</Text>
@@ -192,31 +208,43 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
           </View>
 
           <View style={styles.socialIcons}>
-            <TouchableOpacity style={styles.iconButton} onPress={handleLike}>
-              <Ionicons name={liked ? 'heart' : 'heart-outline'} size={26} color={liked ? '#ff6b78' : 'white'} />
+
+            <TouchableOpacity style={styles.iconWrapper} onPress={handleLike}>
+              <Ionicons
+                name={liked ? 'heart' : 'heart-outline'}
+                size={30}
+                color={liked ? '#ff3040' : '#fff'}
+              />
               <Text style={styles.iconText}>{formatCount(likeCount)}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
-              <Ionicons name="paper-plane-outline" size={26} color="white" />
+            <TouchableOpacity style={styles.iconWrapper} onPress={handleShare}>
+              <Ionicons name="paper-plane-outline" size={28} color="#fff" />
               <Text style={styles.iconText}>{formatCount(shareCount)}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.iconButton} onPress={handleSave}>
-              <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={26} color={saved ? '#ffd700' : 'white'} />
+            <TouchableOpacity style={styles.iconWrapper} onPress={handleSave}>
+              <Ionicons
+                name={saved ? 'bookmark' : 'bookmark-outline'}
+                size={28}
+                color="#fff"
+              />
               <Text style={styles.iconText}>{formatCount(bookmarkCount)}</Text>
             </TouchableOpacity>
+
           </View>
-        </View>
+        </Animated.View>
 
         {/* View Details Button - Centered at Bottom */}
         <TouchableOpacity
-          style={styles.viewDetailsButton}
+          style={[styles.viewDetailsButton, { opacity: overlayOpacity }]}
           onPress={handleViewDetails}
+          activeOpacity={0.8}
+          disabled={!contentVisible}
         >
           <Text style={styles.viewDetailsText}>View Details</Text>
         </TouchableOpacity>
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -285,7 +313,7 @@ const styles = StyleSheet.create({
   },
   viewDetailsButton: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 20,
     left: 20,
     right: 20,
     backgroundColor: '#fff',
@@ -309,23 +337,19 @@ const styles = StyleSheet.create({
   },
   socialIcons: {
     alignItems: 'center',
+    justifyContent: 'flex-end',
     marginLeft: 8,
-    gap: 20,
+    gap: 22,
   },
-  iconButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
+
+  iconWrapper: {
     alignItems: 'center',
-    marginBottom: 20,
   },
+
   iconText: {
     color: '#fff',
-    marginTop: 8,
-    fontSize: 11,
-    fontWeight: '600',
-    opacity: 0.9,
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: '500',
   },
 });
