@@ -140,8 +140,9 @@ export default function PriceBucketScreen() {
           </View>
         </View>
 
-        {/* Title */}
-        <ThemedText style={styles.title}>What's your typical shopping range?</ThemedText>
+        <View style={{ paddingHorizontal: 20, flex: 1 }}>
+          {/* Title */}
+          <ThemedText style={styles.title}>What's your typical shopping range?</ThemedText>
         <ThemedText style={styles.subtitle}>We'll match great styles within your comfort zone.</ThemedText>
 
         <View style={styles.pillRow}>
@@ -223,6 +224,7 @@ export default function PriceBucketScreen() {
           <View style={styles.adjustDot} />
           <ThemedText style={styles.adjustText}>You can adjust this anytime in your profile settings.</ThemedText>
         </View>
+        </View>
       </View>
 
       {/* Bottom Continue Button */}
@@ -241,7 +243,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingHorizontal: 20,
   },
 
   topBar: {
@@ -267,12 +268,12 @@ const styles = StyleSheet.create({
   skip: {
     fontSize: 14,
     color: '#777',
-    fontWeight: '600',
   },
 
 
   progressContainer: {
     marginTop: 20,
+    paddingHorizontal: 20,
   },
 
   stepText: {
@@ -479,7 +480,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 10,
+    marginHorizontal: 20,
     marginBottom: 20,
   },
 

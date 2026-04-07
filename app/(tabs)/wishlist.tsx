@@ -223,7 +223,7 @@ export default function Wishlist() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9fb' },
+  container: { flex: 1, backgroundColor: '#ffffffff' },
   pageHeader: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image, Linking } from 'react-native';
+import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image, Linking, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProductCard, { Product } from '../../components/ui/product-card';
 import SwipeableCard from '../../components/ui/swipeable-card';
@@ -47,6 +47,17 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [swipedStack, setSwipedStack] = useState<Array<{ product: Product; direction: 'left' | 'right' }>>([]);
   const undoTimerRef = useRef<number | null>(null);
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const [headerVisible, setHeaderVisible] = useState(true);
+
+  const handleVisibilityChange = (visible: boolean) => {
+    setHeaderVisible(visible);
+    Animated.timing(headerOpacity, {
+      toValue: visible ? 1 : 0,
+      duration: 260,
+      useNativeDriver: true,
+    }).start();
+  };
 
   // Fetch products from API on component mount
   useEffect(() => {
@@ -175,7 +186,7 @@ export default function Home() {
   const renderItem = ({ item }: { item: Product }) => (
     <View style={{ height: containerHeight }}>
       <SwipeableCard onSwipe={(dir) => handleSwipe(item, dir)}>
-        <ProductCard product={item} />
+        <ProductCard product={item} onVisibilityChange={handleVisibilityChange} />
       </SwipeableCard>
     </View>
   );
@@ -232,14 +243,17 @@ export default function Home() {
           style={styles.logo}
           resizeMode="contain"
         />
-        <View style={styles.headerIcons}>
+        <Animated.View 
+          style={[styles.headerIcons, { opacity: headerOpacity }]} 
+          pointerEvents={headerVisible ? 'auto' : 'none'}
+        >
           <TouchableOpacity style={styles.headerIcon}>
             <Ionicons name="search" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIcon}>
             <Ionicons name="cart" size={24} color="white" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
       </View>
 
       {swipedStack.length > 0 && (

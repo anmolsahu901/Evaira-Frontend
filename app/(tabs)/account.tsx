@@ -228,7 +228,7 @@ export default function Account() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#ffffffff',
   },
   content: {
     paddingHorizontal: 16,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   name: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     marginBottom: 4,
   },
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   editButton: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffffff',
     borderWidth: 1,
     borderColor: '#c8d1e7',
     borderRadius: 24,

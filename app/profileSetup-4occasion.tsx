@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { MaterialCommunityIcons, Entypo } from '@expo/vector-icons';
 
 import { ThemedText } from "../components/themed-text";
 import { ThemedView } from "../components/themed-view";
@@ -11,50 +12,58 @@ const OCCASIONS = [
     id: "OFFICE",
     label: "Office",
     subtitle: "Professional & Polished",
-    icon: "👔",
+    iconName: "briefcase-outline",
+    iconNameSolid: "briefcase",
   },
   {
     id: "COLLEGE",
     label: "College",
     subtitle: "Smart & Trendy",
-    icon: "🎓",
+    iconName: "school-outline",
+    iconNameSolid: "school",
   },
   {
     id: "CASUAL_EVERYDAY",
     label: "Casual Everyday",
     subtitle: "Easy & Comfortable",
-    icon: "☕",
+    iconName: "coffee-outline",
+    iconNameSolid: "coffee",
   },
   {
     id: "GYM_ACTIVE",
     label: "Gym / Active",
     subtitle: "High Performance",
-    icon: "💪",
+    iconName: "dumbbell",
+    iconNameSolid: "dumbbell",
   },
   {
     id: "HOME_LOUNGE",
     label: "Home",
     subtitle: "Cozy & Relaxed",
-    icon: "🏠",
+    iconName: "home-outline",
+    iconNameSolid: "home",
   },
   {
     id: "PARTY",
     label: "Party",
     subtitle: "Elegant & Bold",
-    icon: "🍷",
+    iconName: "drink",
+    iconNameSolid: "drink",
+    family: "Entypo",
   },
   {
     id: "VACATION",
     label: "Vacation",
     subtitle: "Versatile & Chic",
-    icon: "✈️",
+    iconName: "airplane",
+    iconNameSolid: "airplane",
   },
-
   {
     id: "FESTIVE",
     label: "Festive",
     subtitle: "Traditional & Vibrant",
-    icon: "🏠",
+    iconName: "party-popper",
+    iconNameSolid: "party-popper",
   },
 ];
 
@@ -129,8 +138,23 @@ export default function OccasionsScreen() {
                   isSelected && styles.cardSelected,
                 ]}
                 onPress={() => toggleOption(occasion.id)}
+                activeOpacity={0.8}
               >
-                <ThemedText style={styles.iconText}>{occasion.icon}</ThemedText>
+                <View style={[styles.iconContainer, isSelected && styles.iconContainerSelected]}>
+                  {occasion.family === "Entypo" ? (
+                    <Entypo 
+                      name={(isSelected ? occasion.iconNameSolid : occasion.iconName) as any} 
+                      size={38} 
+                      color={isSelected ? "#fff" : "#111"} 
+                    />
+                  ) : (
+                    <MaterialCommunityIcons 
+                      name={(isSelected ? occasion.iconNameSolid : occasion.iconName) as any} 
+                      size={38} 
+                      color={isSelected ? "#fff" : "#111"} 
+                    />
+                  )}
+                </View>
 
                 <ThemedText style={styles.cardLabel}>
                   {occasion.label}
@@ -142,7 +166,7 @@ export default function OccasionsScreen() {
                 {/* Checkmark */}
                 {isSelected && (
                   <View style={styles.checkCircle}>
-                    <ThemedText style={styles.check}>✓</ThemedText>
+                    <MaterialCommunityIcons name="check" size={16} color="#fff" />
                   </View>
                 )}
               </TouchableOpacity>
@@ -157,13 +181,12 @@ export default function OccasionsScreen() {
 
       {/* Bottom Button */}
       <View style={styles.bottomWrap}>
-                          <TouchableOpacity style={styles.continueButton} onPress={handleContinue} >
-                            <View style={styles.continueContent}>
-                              <ThemedText style={styles.continueText}>Continue</ThemedText>
-                          
-                            </View>
-                          </TouchableOpacity>
-                        </View>
+        <TouchableOpacity style={styles.continueButton} onPress={handleContinue} >
+          <View style={styles.continueContent}>
+            <ThemedText style={styles.continueText}>Continue</ThemedText>
+          </View>
+        </TouchableOpacity>
+      </View>
     </ThemedView>
   );
 }
@@ -257,29 +280,34 @@ const styles = StyleSheet.create({
 
   card: {
     width: "48%",
+    aspectRatio: 0.95,
     borderRadius: 16,
     marginBottom: 16,
     padding: 16,
     backgroundColor: "#ffffff",
-    borderWidth: 2,
-    borderColor: "#dbd5d5",
+    borderWidth: 1.5,
+    borderColor: "#eaeaec",
     alignItems: "center",
     justifyContent: "center",
-
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
   },
 
   cardSelected: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#e8e9eb",
     borderColor: "#111",
   },
 
-  iconText: {
-    fontSize: 40,
-    marginBottom: 8,
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#f6f6f8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+
+  iconContainerSelected: {
+    backgroundColor: '#111',
   },
 
   cardLabel: {
@@ -300,20 +328,14 @@ const styles = StyleSheet.create({
   /* ----------- CHECKMARK ----------- */
   checkCircle: {
     position: "absolute",
-    top: 10,
-    right: 10,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    top: 12,
+    right: 12,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: "#111",
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  check: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "700",
   },
 
   /* ----------- MULTI SELECT TEXT ----------- */
@@ -328,7 +350,7 @@ const styles = StyleSheet.create({
   },
 
   /* ----------- BUTTON ----------- */
-     bottomWrap: {
+  bottomWrap: {
     paddingBottom: 24,
   },
 

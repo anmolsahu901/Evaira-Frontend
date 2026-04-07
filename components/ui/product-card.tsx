@@ -36,11 +36,12 @@ interface ProductCardProps {
   product: Product;
   onSave?: (productId: string | number, isSaved: boolean) => void;
   onLike?: (productId: string | number, isLiked: boolean) => void;
+  onVisibilityChange?: (visible: boolean) => void;
 }
 
 
 
-export default function ProductCard({ product, onSave, onLike }: ProductCardProps) {
+export default function ProductCard({ product, onSave, onLike, onVisibilityChange }: ProductCardProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(product.likes);
   const [saved, setSaved] = useState(false);
@@ -54,10 +55,20 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
     Animated.timing(overlayOpacity, {
       toValue: nextValue,
       duration: 260,
-      useNativeDriver: true,
+      useNativeDriver: false,
     }).start();
     setContentVisible(!contentVisible);
+    onVisibilityChange?.(!contentVisible);
   };
+
+  const buttonBgColor = overlayOpacity.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#000000', '#ffffff']
+  });
+  const buttonTextColor = overlayOpacity.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#ffffff', '#000000']
+  });
 
   const formatCount = (n: number) => {
     if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -199,15 +210,15 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
         />
 
         <Animated.View pointerEvents={contentVisible ? 'auto' : 'none'} style={[styles.overlay, { opacity: overlayOpacity }]}>
-          <View style={styles.productInfo}>
+          <Pressable style={styles.productInfo} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.productName}>{product.name}</Text>
             <Text style={styles.productPrice}>{product.price}</Text>
             <Text style={styles.productDescription} numberOfLines={3}>
               {product.description}
             </Text>
-          </View>
+          </Pressable>
 
-          <View style={styles.socialIcons}>
+          <Pressable style={styles.socialIcons} onPress={(e) => e.stopPropagation()}>
 
             <TouchableOpacity style={styles.iconWrapper} onPress={handleLike}>
               <Ionicons
@@ -232,17 +243,18 @@ export default function ProductCard({ product, onSave, onLike }: ProductCardProp
               <Text style={styles.iconText}>{formatCount(bookmarkCount)}</Text>
             </TouchableOpacity>
 
-          </View>
+          </Pressable>
         </Animated.View>
 
         {/* View Details Button - Centered at Bottom */}
         <TouchableOpacity
-          style={[styles.viewDetailsButton, { opacity: overlayOpacity }]}
+          style={styles.viewDetailsWrapper}
           onPress={handleViewDetails}
           activeOpacity={0.8}
-          disabled={!contentVisible}
         >
-          <Text style={styles.viewDetailsText}>View Details</Text>
+          <Animated.View style={[styles.viewDetailsButton, { backgroundColor: buttonBgColor }]}>
+            <Animated.Text style={[styles.viewDetailsText, { color: buttonTextColor }]}>View Details</Animated.Text>
+          </Animated.View>
         </TouchableOpacity>
       </Pressable>
     </View>
@@ -311,18 +323,19 @@ const styles = StyleSheet.create({
     opacity: 0.95,
     marginBottom: 12,
   },
-  viewDetailsButton: {
+  viewDetailsWrapper: {
     position: 'absolute',
     bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: '#fff',
+    left: 30,
+    right: 30,
+    zIndex: 3,
+  },
+  viewDetailsButton: {
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -331,7 +344,7 @@ const styles = StyleSheet.create({
   },
   viewDetailsText: {
     color: '#000',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.5,
   },

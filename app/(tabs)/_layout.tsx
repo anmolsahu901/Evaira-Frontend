@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { Platform, StatusBar, View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -63,12 +63,12 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="cart"
+        name="stylist"
         options={{
-          title: 'Cart',
+          title: 'Stylist',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'cart' : 'cart-outline'}
+            <MaterialCommunityIcons
+              name={focused ? 'star-four-points' : 'star-four-points-outline'}
               size={24}
               color={color}
             />

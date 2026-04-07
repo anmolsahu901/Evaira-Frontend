@@ -115,8 +115,9 @@ export default function StyleVibe1Screen() {
             return (
               <TouchableOpacity
                 key={style}
-                style={styles.card}
+                style={[styles.card, isSelected && styles.cardSelected]}
                 onPress={() => toggleOption(style)}
+                activeOpacity={0.8}
               >
                 <Image source={STYLE_IMAGES[style]} style={styles.image} />
 
@@ -253,12 +254,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginBottom: 16,
     overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: 'transparent',
 
     // premium shadow
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 4,
+  },
+
+  cardSelected: {
+    borderColor: '#111',
   },
 
   image: {

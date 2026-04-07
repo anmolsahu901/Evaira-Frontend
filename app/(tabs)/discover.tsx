@@ -246,7 +246,7 @@ export default function Discover() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#d4d4d41a',
+    backgroundColor: '#ffffffff',
   },
   container: {
     paddingHorizontal: 16,
