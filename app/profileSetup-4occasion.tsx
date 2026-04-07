@@ -108,7 +108,7 @@ export default function OccasionsScreen() {
       </View>
 
       {/* Content */}
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
         {/* Title */}
         <ThemedText style={styles.title}>When do you usually dress up?</ThemedText>
         <ThemedText style={styles.subtitle}>
@@ -156,13 +156,14 @@ export default function OccasionsScreen() {
       </ScrollView>
 
       {/* Bottom Button */}
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <View style={styles.continueContent}>
-          <ThemedText style={styles.continueText}>Continue</ThemedText>
-          {/* <ThemedText style={styles.nextText}>Next: Fit Preference</ThemedText>
-          <ThemedText style={styles.arrow}>→</ThemedText> */}
-        </View>
-      </TouchableOpacity>
+      <View style={styles.bottomWrap}>
+                          <TouchableOpacity style={styles.continueButton} onPress={handleContinue} >
+                            <View style={styles.continueContent}>
+                              <ThemedText style={styles.continueText}>Continue</ThemedText>
+                          
+                            </View>
+                          </TouchableOpacity>
+                        </View>
     </ThemedView>
   );
 }
@@ -175,23 +176,23 @@ const styles = StyleSheet.create({
 
   /* ----------- TOP BAR ----------- */
   topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 35,
   },
 
   logo: {
     width: 40,
     height: 40,
-    alignSelf: "center",
-    marginLeft: 19,
+    alignSelf: 'center',
+    marginLeft: 20, // adjust for centering with back button
   },
 
   back: {
-    fontSize: 26,
-    color: "#111",
+    fontSize: 36,
+    color: '#111',
   },
 
   skip: {
@@ -327,38 +328,29 @@ const styles = StyleSheet.create({
   },
 
   /* ----------- BUTTON ----------- */
+     bottomWrap: {
+    paddingBottom: 24,
+  },
+
   continueButton: {
     height: 64,
-    backgroundColor: "#2b3133",
+    backgroundColor: '#000000',
     borderRadius: 32,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginHorizontal: 20,
     marginBottom: 20,
   },
 
   continueContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
   continueText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    marginRight: 4,
-  },
-
-  nextText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "500",
+    color: '#fff',
+    fontSize: 19,
+    fontWeight: '600',
     marginRight: 8,
-  },
-
-  arrow: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
   },
 });

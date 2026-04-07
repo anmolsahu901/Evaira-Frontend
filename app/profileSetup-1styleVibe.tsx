@@ -100,7 +100,7 @@ export default function StyleVibe1Screen() {
 
 
       {/* Grid */}
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
         {/* Title */}
         <ThemedText style={styles.title}>What styles feel like you?</ThemedText>
         <ThemedText style={styles.subtitle}>
@@ -148,14 +148,14 @@ export default function StyleVibe1Screen() {
       </ScrollView>
 
       {/* Bottom Button */}
-      <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-        <View style={styles.continueContent}>
-          <ThemedText style={styles.continueText}>
-            Continue with {selected.length || 1} Styles
-          </ThemedText>
-          <ThemedText style={styles.arrow}>→</ThemedText>
-        </View>
-      </TouchableOpacity>
+     <View style={styles.bottomWrap}>
+                               <TouchableOpacity style={styles.continueButton} onPress={handleContinue} >
+                                 <View style={styles.continueContent}>
+                                   <ThemedText style={styles.continueText}>Continue</ThemedText>
+                               
+                                 </View>
+                               </TouchableOpacity>
+                             </View>
 
     </ThemedView>
   );
@@ -173,18 +173,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 35,
   },
 
   logo: {
     width: 40,
     height: 40,
     alignSelf: 'center',
-    marginLeft: 19, // adjust for centering with back button
+    marginLeft: 20, // adjust for centering with back button
   },
 
   back: {
-    fontSize: 26,
+    fontSize: 36,
     color: '#111',
   },
 
@@ -312,7 +312,11 @@ const styles = StyleSheet.create({
     color: '#777',
   },
 
-  /* ---------------- BUTTON ---------------- */
+   /* ----------- BUTTON ----------- */
+     bottomWrap: {
+    paddingBottom: 24,
+  },
+
   continueButton: {
     height: 64,
     backgroundColor: '#000000',
@@ -330,14 +334,8 @@ const styles = StyleSheet.create({
 
   continueText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: '600',
     marginRight: 8,
-  },
-
-  arrow: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
   },
 });

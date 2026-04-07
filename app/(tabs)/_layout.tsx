@@ -4,9 +4,7 @@ import { Platform, StatusBar, View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
-  // const insets = useSafeAreaInsets();
-  // const bottomPadding = Platform.OS === 'ios' ? 20 : 10;
-  // const baseHeight = Platform.OS === 'ios' ? 85 : 70;
+
 
   return (
     <>
@@ -18,13 +16,14 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarShowLabel: true,
-        tabBarActiveTintColor: '#000000ff',
-        tabBarInactiveTintColor: '#8E8E93',
+        tabBarActiveTintColor: 'rgb(0, 0, 0)',
+        tabBarInactiveTintColor: '#6d6d6d',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E5E5EA',
           paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+          
           paddingTop: 10,
           height: Platform.OS === 'ios' ? 85 : 70,
         },

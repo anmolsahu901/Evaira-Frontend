@@ -102,7 +102,7 @@ export default function FitTypeScreen() {
             </View>
 
             {/* Content */}
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
                 {/* Title */}
                 <ThemedText style={styles.title}>
                     How do you like your clothes to fit?
@@ -189,25 +189,25 @@ const styles = StyleSheet.create({
     },
 
     /* ----------- TOP BAR ----------- */
-    topBar: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingTop: 50,
-    },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 35,
+  },
 
-    logo: {
-        width: 40,
-        height: 40,
-        alignSelf: 'center',
-        marginLeft: 19,
-    },
+  logo: {
+    width: 40,
+    height: 40,
+    alignSelf: 'center',
+    marginLeft: 20, // adjust for centering with back button
+  },
 
-    back: {
-        fontSize: 26,
-        color: '#111',
-    },
+  back: {
+    fontSize: 36,
+    color: '#111',
+  },
 
     skip: {
         fontSize: 14,
@@ -372,20 +372,20 @@ const styles = StyleSheet.create({
     },
 
     tipLabel: {
-        fontSize: 12,
+        fontSize: 13,
         color: '#333',
-        fontWeight: '500',
+        fontWeight: '700',
         lineHeight: 16,
         marginBottom: 4,
     },
 
     tipBold: {
         fontWeight: '700',
-        color: '#111',
+        color: '#000000',
     },
 
     tipText: {
-        fontSize: 12,
+        fontSize: 13,
         color: '#666',
         fontWeight: '400',
         lineHeight: 16,

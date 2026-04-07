@@ -19,28 +19,28 @@ const PRICE_BUCKETS: Array<{
       pillLabel: 'Budget',
       sliderLabel: 'BUDGET',
       infoTitle: 'Budget Shopping',
-      infoBody: 'Everyday essentials at great prices. Expected range: Rs500 - Rs1000.',
+      infoBody: 'Everyday essentials at great prices. Expected range: Rs.500 - Rs.1000.',
     },
     {
       key: 'VALUE',
       pillLabel: 'Value',
       sliderLabel: 'VALUE',
       infoTitle: 'Value Shopping',
-      infoBody: 'Quality basics with smart value. Expected range: Rs900 - Rs1600.',
+      infoBody: 'Quality basics with smart value. Expected range: Rs.900 - Rs.1600.',
     },
     {
       key: 'MIDRANGE',
       pillLabel: 'Mid-Range',
       sliderLabel: 'MID-RANGE',
       infoTitle: 'Mid-range Shopping',
-      infoBody: 'Contemporary brands and premium materials. Expected range: Rs1000 - Rs2500.',
+      infoBody: 'Contemporary brands and premium materials. Expected range: Rs.1000 - Rs.2500.',
     },
     {
       key: 'PREMIUM',
       pillLabel: 'Premium',
       sliderLabel: 'PREMIUM',
       infoTitle: 'Premium Shopping',
-      infoBody: 'Designer pieces and top-tier fabrics. Expected range: Rs2500+',
+      infoBody: 'Designer pieces and top-tier fabrics. Expected range: Rs.2500+',
     },
   ];
 
@@ -248,11 +248,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 50,
+    paddingHorizontal: 20,
+    paddingTop: 35,
+  },
+
+  logo: {
+    width: 40,
+    height: 40,
+    alignSelf: 'center',
+    marginLeft: 20, // adjust for centering with back button
   },
 
   back: {
-    fontSize: 26,
+    fontSize: 36,
     color: '#111',
   },
 
@@ -262,12 +270,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  logo: {
-    width: 40,
-    height: 40,
-    alignSelf: 'center',
-    marginLeft: 19,
-  },
 
   progressContainer: {
     marginTop: 20,
@@ -331,6 +333,7 @@ const styles = StyleSheet.create({
   sliderWrap: {
     marginTop: 40,
     marginBottom: 20,
+    paddingHorizontal: 16,
   },
 
   sliderTrack: {
@@ -388,7 +391,7 @@ const styles = StyleSheet.create({
   labelsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+
   },
 
   sliderLabel: {
@@ -424,7 +427,7 @@ const styles = StyleSheet.create({
   },
 
   infoIconText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
     color: '#111',
   },
@@ -434,16 +437,16 @@ const styles = StyleSheet.create({
   },
 
   infoTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#111',
     marginBottom: 4,
   },
 
   infoBody: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#666',
-    lineHeight: 16,
+    lineHeight: 20,
   },
 
   adjustBox: {
@@ -461,21 +464,23 @@ const styles = StyleSheet.create({
   },
 
   adjustText: {
-    fontSize: 11,
+    fontSize: 13,
     color: '#999',
   },
 
-  bottomWrap: {
-    paddingBottom: 20,
-    paddingHorizontal: 0,
+   /* ----------- BUTTON ----------- */
+     bottomWrap: {
+    paddingBottom: 24,
   },
 
   continueButton: {
-    height: 56,
-    backgroundColor: '#2b3133',
-    borderRadius: 28,
+    height: 64,
+    backgroundColor: '#000000',
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
+    marginHorizontal: 10,
+    marginBottom: 20,
   },
 
   continueContent: {
@@ -485,8 +490,9 @@ const styles = StyleSheet.create({
 
   continueText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: '600',
+    marginRight: 8,
   },
 });
 

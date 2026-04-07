@@ -90,7 +90,7 @@ export default function FavoriteColorsScreen() {
        
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
         <View>
           <ThemedText style={styles.title}>Which colors do you love wearing?</ThemedText>
           <ThemedText style={styles.subtitle}>
@@ -159,15 +159,15 @@ export default function FavoriteColorsScreen() {
         </View>
       </ScrollView>
 
-      {/* Bottom Continue Button (same submit logic) */}
-      <View style={styles.bottomButtonWrapper}>
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <View style={styles.continueContent}>
-            <ThemedText style={styles.continueText}>Continue</ThemedText>
-            <ThemedText style={styles.arrow}>→</ThemedText>
-          </View>
-        </TouchableOpacity>
-      </View>
+      {/* Bottom Button */}
+           <View style={styles.bottomWrap}>
+                               <TouchableOpacity style={styles.continueButton} onPress={handleContinue} >
+                                 <View style={styles.continueContent}>
+                                   <ThemedText style={styles.continueText}>Continue</ThemedText>
+                               
+                                 </View>
+                               </TouchableOpacity>
+                             </View>
     </ThemedView>
   );
 }
@@ -184,18 +184,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 35,
   },
 
   logo: {
     width: 40,
     height: 40,
     alignSelf: 'center',
-    marginLeft: 19, // adjust for centering with back button
+    marginLeft: 20, // adjust for centering with back button
   },
 
   back: {
-    fontSize: 26,
+    fontSize: 36,
     color: '#111',
   },
 
@@ -349,6 +349,7 @@ const styles = StyleSheet.create({
 
   dynamicCard: {
     marginTop: 22,
+    marginHorizontal: 10,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
@@ -388,23 +389,19 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  /* Bottom Button */
-  bottomButtonWrapper: {
-    paddingHorizontal: 20,
-    paddingBottom: 18,
+    /* ----------- BUTTON ----------- */
+     bottomWrap: {
+    paddingBottom: 24,
   },
 
   continueButton: {
     height: 64,
-    backgroundColor: '#2b3133',
+    backgroundColor: '#000000',
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    marginHorizontal: 20,
+    marginBottom: 20,
   },
 
   continueContent: {
@@ -414,18 +411,8 @@ const styles = StyleSheet.create({
 
   continueText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-    marginRight: 10,
-  },
-
-  arrow: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '800',
-  },
-
-  spinner: {
-    marginLeft: 8,
+    fontSize: 19,
+    fontWeight: '600',
+    marginRight: 8,
   },
 });
