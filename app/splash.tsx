@@ -71,7 +71,7 @@ export default function SplashScreen() {
         if (token) { // [PERSIST_AUTH]
           // Token found → User was previously logged in
           // Now validate if the token is still valid (not expired)
-          console.log('Token found. Validating token...');
+          console.log('Token found. Validating token... Token is:', token);
           const isTokenValid = await validateToken();
 
           if (isTokenValid) {

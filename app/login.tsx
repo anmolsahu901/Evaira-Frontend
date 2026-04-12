@@ -129,7 +129,7 @@ export default function LoginScreen() {
           router.replace('/profileSetup-1styleVibe' as any);
         } else {
           // Existing user: go to home
-          router.replace('/profileSetup-1styleVibe');
+          router.replace('/(tabs)/home' as any);
         }
       } else {
         setMessage('Invalid OTP. Please try again.');

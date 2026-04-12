@@ -68,7 +68,7 @@ export default function WishlistCard({ item, onRemove, onMoveToBag }: Props) {
         </View>
 
         <TouchableOpacity style={styles.moveBtn} onPress={handleOpenDeeplink}>
-          <Text style={styles.moveText}>CLICK TO OPEN</Text>
+          <Text style={styles.moveText}>VIEW DETAILS</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image, Linking, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProductCard, { Product } from '../../components/ui/product-card';
 import SwipeableCard from '../../components/ui/swipeable-card';
-import { sendLikeNotification, getProducts, dislikeProduct } from '../../lib/api';
+import { sendLikeNotification, getProducts, dislikeProduct, prefetchDiscoverData } from '../../lib/api';
 import { useWishlist } from '../../context/WishlistContext';
 
 const mockProducts: Product[] = [
@@ -59,32 +60,37 @@ export default function Home() {
     }).start();
   };
 
-  // Fetch products from API on component mount
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const result = await getProducts();
-        if (result.ok && result.data) {
-          setProducts(result.data);
-        } else {
-          console.error('Failed to fetch products:', result.data);
+  // Fetch products from API whenever the tab comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const fetchProducts = async () => {
+        try {
+          setLoading(true);
+          const result = await getProducts();
+          if (result.ok && result.data) {
+            setProducts(result.data);
+          } else {
+            console.error('Failed to fetch products:', result.data);
+            // Fallback to mock products on error
+            setProducts(mockProducts);
+          }
+        } catch (error) {
+          console.error('Error fetching products:', error);
           // Fallback to mock products on error
           setProducts(mockProducts);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        // Fallback to mock products on error
-        setProducts(mockProducts);
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    fetchProducts();
-  }, []);
+      fetchProducts();
+    }, [])
+  );
 
   useEffect(() => {
+    // Prefetch discover data when home screen opens
+    prefetchDiscoverData().catch(e => console.log('Prefetch explore failed', e));
+    
     return () => {
       if (undoTimerRef.current) {
         clearTimeout(undoTimerRef.current);
@@ -111,17 +117,11 @@ export default function Home() {
     setProducts(prev => prev.filter(p => p.id !== product.id));
 
     if (direction === 'right') {
-      // mark liked remotely (best effort)
       try {
-        const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'LIKE' });
+        const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'OPEN' });
         if (!res.ok) throw new Error('network');
-
-        // Update wishlist context to reflect the like
-        wishlist.addLikedProduct(product.id);
-        console.log('[Home] Product liked and added to wishlist context:', product.id);
       } catch (e) {
-        Alert.alert('Error', 'Failed to send like to server.');
-        console.warn('Like API failed', e);
+        console.warn('OPEN API failed', e);
       }
 
       // 🔗 Open deeplink if available
@@ -163,18 +163,7 @@ export default function Home() {
     setSwipedStack(rest);
 
     if (direction === 'right') {
-      // revert the like on the server (best-effort)
-      try {
-        const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'UNLIKE' });
-        if (!res.ok) throw new Error('network');
-
-        // Remove from wishlist context
-        wishlist.removeLikedProduct(product.id);
-        console.log('[Home] Product unliked and removed from wishlist context:', product.id);
-      } catch (e) {
-        Alert.alert('Error', 'Failed to revert like on server.');
-        console.warn('Revert like failed', e);
-      }
+      // Revert the local visually (by pushing it back), but 'OPEN' actions typically aren't reverted on the server.
     }
 
     if (rest.length === 0 && undoTimerRef.current) {

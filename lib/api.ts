@@ -22,7 +22,7 @@ const ACTIONS_URL = 'http://192.168.1.7:8080/api/actions'; // Like/Unlike endpoi
 const PRODUCT_BASED_ON_USER_ACTIONS_URL = 'http://192.168.1.7:8080/api/actions/basedOnUserActions'; // New endpoint for product recommendations based on user actions
 const WISHLIST_URL = 'http://192.168.1.7:8080/api/actions/getWishlistData';
 const VALIDATE_TOKEN_URL = 'http://192.168.1.7:8080/api/profile/tokenValidation';
-
+const DISCOVER_URL = 'http://192.168.1.7:8080/api/discover/getData';
 // Development mock toggle:
 // - By default, mocks are enabled in dev (__DEV__)
 // - Set `global.__FORCE_API_CALL__ = true` (in dev console or at app startup) to force real network requests
@@ -378,4 +378,35 @@ export async function getProductsByUserAction(actionType: 'LIKE' | 'UNLIKE' | 'S
   }
 
   return result;
+}
+
+// ✅ Cache variables for Discover Data
+let discoverCache: ApiResult | null = null;
+let discoverPromise: Promise<ApiResult> | null = null;
+
+// ✅ NEW: Prefetch Discover Screen Data
+export async function prefetchDiscoverData(): Promise<ApiResult> {
+  if (discoverPromise) return discoverPromise;
+  
+  discoverPromise = authenticatedFetch(DISCOVER_URL, {
+    method: 'POST',
+  }).then(result => {
+    discoverCache = result;
+    return result;
+  });
+  
+  return discoverPromise;
+}
+
+// ✅ NEW: Fetch Discover Screen Data (with caching)
+export async function getDiscoverData(forceRefresh = false): Promise<ApiResult> {
+  if (forceRefresh) {
+    discoverPromise = null;
+    discoverCache = null;
+  }
+  
+  if (discoverCache) return discoverCache;
+  if (discoverPromise) return discoverPromise;
+  
+  return prefetchDiscoverData();
 }
