@@ -18,9 +18,10 @@ type Props = {
   item: WishlistItem;
   onRemove?: (productId: string | number) => void | Promise<void>;
   onMoveToBag?: (id: string) => void;
+  onCardPress?: () => void;
 };
 
-export default function WishlistCard({ item, onRemove, onMoveToBag }: Props) {
+export default function WishlistCard({ item, onRemove, onMoveToBag, onCardPress }: Props) {
   const handleOpenDeeplink = async () => {
     if (!item.deeplinkUrl) {
       Alert.alert('Error', 'Product URL is not available');
@@ -44,7 +45,7 @@ export default function WishlistCard({ item, onRemove, onMoveToBag }: Props) {
   };
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity activeOpacity={0.95} onPress={onCardPress} style={styles.card}>
       <Image source={{ uri: item.imageUrl }} style={styles.image} />
 
       {typeof item.rating === 'number' && (
@@ -71,7 +72,7 @@ export default function WishlistCard({ item, onRemove, onMoveToBag }: Props) {
           <Text style={styles.moveText}>VIEW DETAILS</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

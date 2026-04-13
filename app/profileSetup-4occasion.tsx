@@ -1,11 +1,13 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { MaterialCommunityIcons, Entypo } from '@expo/vector-icons';
 
 import { ThemedText } from "../components/themed-text";
 import { ThemedView } from "../components/themed-view";
 import { useUserProfile } from "../context/UserProfileContext";
+import { useLocalSearchParams } from "expo-router";
+import { submitUserProfile } from "../lib/profileAPI";
 
 const OCCASIONS = [
   {
@@ -69,8 +71,10 @@ const OCCASIONS = [
 
 export default function OccasionsScreen() {
   const router = useRouter();
+  const { isEditing } = useLocalSearchParams();
   const [selected, setSelected] = useState<string[]>([]);
-  const { setPreferredOccasions } = useUserProfile();
+  const { setPreferredOccasions, getProfileData } = useUserProfile();
+  const [loading, setLoading] = useState(false);
 
   const toggleOption = (occasionId: string) => {
     setSelected((current) =>
@@ -80,14 +84,33 @@ export default function OccasionsScreen() {
     );
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!selected.length) {
       alert("Select at least one occasion to continue.");
       return;
     }
-    // Save occasions to context and navigate to favorite colors
+    // Save occasions to context
     setPreferredOccasions(selected);
-    router.push("/profileSetup-5fitType");
+
+    if (isEditing) {
+      setLoading(true);
+      try {
+        const profileData = { ...getProfileData(), preferredOccasions: selected };
+        const response = await submitUserProfile(profileData);
+        if (response.success) {
+          router.push('/(tabs)/account');
+        } else {
+          alert(`Error: ${response.message}`);
+        }
+      } catch (e) {
+        console.error('Submit error:', e);
+        alert('Failed to update profile');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      router.push("/profileSetup-5fitType");
+    }
   };
 
   return (
@@ -181,9 +204,10 @@ export default function OccasionsScreen() {
 
       {/* Bottom Button */}
       <View style={styles.bottomWrap}>
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue} >
+        <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={loading}>
           <View style={styles.continueContent}>
-            <ThemedText style={styles.continueText}>Continue</ThemedText>
+            <ThemedText style={styles.continueText}>{isEditing ? 'Update' : 'Continue'}</ThemedText>
+            {loading ? <ActivityIndicator color="#fff" /> : null}
           </View>
         </TouchableOpacity>
       </View>

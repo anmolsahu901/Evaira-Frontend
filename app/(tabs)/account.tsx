@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Image, StyleSheet, View, Pressable, Platform, Text, TouchableOpacity } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,12 +44,7 @@ function SectionItem({ item, onPress, colors }: { item: SectionLink; onPress: (i
 
 import { useUserProfile } from '../../context/UserProfileContext';
 import * as SecureStore from 'expo-secure-store';
-
-const stylePreferences: SectionLink[] = [
-  { key: 'body-type', label: 'Body Type & Measurements', subLabel: 'Hourglass · 5’7” · Size 6', icon: 'person-circle-outline', route: '/profileSetup-1styleVibe' },
-  { key: 'fit', label: 'Fit & Silhouette', subLabel: 'Preference: Oversized & Relaxed', icon: 'resize-outline', route: '/profileSetup-5fitType' },
-  { key: 'color', label: 'Color Palette', subLabel: 'Neutrals, Earth Tones, Deep Teal', icon: 'color-palette-outline', route: '/profileSetup-2colorSelection' },
-];
+import { fetchUserProfile } from '../../lib/profileAPI';
 
 const personalActivity: SectionLink[] = [
   { key: 'wishlist', label: 'Wishlist & Curated', subLabel: '42 items saved', icon: 'heart-outline', route: '/wishlist' },
@@ -70,6 +65,34 @@ const systemLinks: SectionLink[] = [
 export default function Account() {
   const router = useRouter();
   const { name, age, resetProfile } = useUserProfile();
+  const [profileData, setProfileData] = useState<any>(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = await SecureStore.getItemAsync('authToken');
+        if (token) {
+          const res = await fetchUserProfile(token);
+          if (res.success) {
+            setProfileData(res.data);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load profile data', err);
+      }
+    };
+    loadProfile();
+  }, []);
+
+  const displayName = profileData?.name || profileData?.email || name || 'Sienna Westbrook';
+
+  const stylePreferences: SectionLink[] = [
+    { key: 'body-type', label: 'Style Vibe', subLabel: profileData?.styleVibes?.length ? profileData.styleVibes.join(', ') : 'Preference: Casual & minimal', icon: 'person-circle-outline', route: '/profileSetup-1styleVibe?isEditing=true' },
+    { key: 'fit', label: 'Fit & Silhouette', subLabel: profileData?.fitTypes?.length ? profileData.fitTypes.join(', ') : 'Preference: Oversized & Relaxed', icon: 'resize-outline', route: '/profileSetup-5fitType?isEditing=true' },
+    { key: 'color', label: 'Color Palette', subLabel: profileData?.favoriteColors?.length ? profileData.favoriteColors.join(', ') : 'Neutrals, Earth Tones, Deep Teal', icon: 'color-palette-outline', route: '/profileSetup-2colorSelection?isEditing=true' },
+    { key: 'occasion', label: 'Preferred Occasions', subLabel: profileData?.preferredOccasions?.length ? profileData.preferredOccasions.join(', ') : 'Casual Everyday, Office', icon: 'calendar-outline', route: '/profileSetup-4occasion?isEditing=true' },
+    { key: 'price', label: 'Price Bucket', subLabel: profileData?.priceBucket || 'Standard', icon: 'pricetag-outline', route: '/profileSetup-3priceBucket?isEditing=true' },
+  ];
 
   const textColor = useThemeColor({}, 'text');
   const iconColor = useThemeColor({}, 'icon');
@@ -110,7 +133,7 @@ export default function Account() {
               resetProfile();
               console.log('✅ User logged out successfully');
               // Redirect to login screen
-              router.replace('/login');
+              router.replace('/splash');
             } catch (error) {
               console.error('Error during logout:', error);
               Alert.alert('Error', 'Failed to log out. Please try again.');
@@ -154,9 +177,9 @@ export default function Account() {
           <View style={styles.avatarOuter}>
             <Image source={Images.logo2} style={styles.avatar} />
           </View>
-          <ThemedText style={styles.name}>{name ? name : 'Sienna Westbrook'}</ThemedText>
+          <ThemedText style={styles.name}>{displayName}</ThemedText>
           <ThemedText style={styles.subtitle}>Premium Member since Oct 2023</ThemedText>
-          <TouchableOpacity style={styles.editButton} onPress={() => router.push('/profileDetails' as any)}>
+          <TouchableOpacity style={styles.editButton}>
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>

@@ -6,6 +6,7 @@ import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { useUserProfile } from '../context/UserProfileContext';
 import { submitUserProfile } from '../lib/profileAPI';
+import { useLocalSearchParams } from 'expo-router';
 
 const FIT_TYPES = [
     {
@@ -36,6 +37,7 @@ const FIT_TYPES = [
 
 export default function FitTypeScreen() {
     const router = useRouter();
+    const { isEditing } = useLocalSearchParams();
     const { setFitTypes ,getProfileData} = useUserProfile();
     const [selected, setSelected] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
@@ -62,7 +64,11 @@ export default function FitTypeScreen() {
       const response = await submitUserProfile(profileData);
 
       if (response.success) {
-        router.replace('/(tabs)/home');
+        if (isEditing) {
+          router.push('/(tabs)/account');
+        } else {
+          router.replace('/(tabs)/home');
+        }
       } else {
         alert(`Error: ${response.message}`);
       }
@@ -173,7 +179,7 @@ export default function FitTypeScreen() {
              <View style={styles.bottomWrap}>
                     <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={loading}>
                       <View style={styles.continueContent}>
-                        <ThemedText style={styles.continueText}>Continue</ThemedText>
+                        <ThemedText style={styles.continueText}>{isEditing ? 'Update' : 'Continue'}</ThemedText>
                         {loading ? <ActivityIndicator color="#fff" /> : null}
                       </View>
                     </TouchableOpacity>

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import WishlistCard, { WishlistItem } from '../../components/ui/wishlist-card';
 import { getWishlistData, unlikeProduct, unsaveProduct } from '../../lib/api';
 import { useWishlist } from '../../context/WishlistContext';
+import { FeedView } from './discover';
 
 const SAMPLE: WishlistItem[] = [
   {
@@ -60,13 +61,15 @@ export default function Wishlist() {
   const wishlist = useWishlist();
   const [filter, setFilter] = useState<string>('Saved');
   const [items, setItems] = useState<WishlistItem[]>([]);
-  const [loading, setLoading] = useState(true); // Start with loading = true to show loader on mount
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFeed, setSelectedFeed] = useState<{ items: any[], initialIndex: number } | null>(null);
 
   const chips = useMemo(() => ['Saved', 'Liked by me'], []);
 
   // Convert API Product to WishlistItem
   const convertProductToWishlistItem = (product: any): WishlistItem => ({
+    ...product,
     id: product.id, // Store database ID for API calls (productId)
     brand: product.category || 'Product', // Use category as brand
     name: product.title || 'Unknown Product',
@@ -148,9 +151,17 @@ export default function Wishlist() {
 
   const onMoveToBag = (id: string) => {
     // placeholder: in real app, call move-to-bag API and remove from wishlist
-    // setItems((prev) => prev.filter((p) => p.id !== id));
-    // show feedback, navigate etc.
   };
+
+  if (selectedFeed) {
+    return (
+      <FeedView 
+        initialItems={selectedFeed.items} 
+        initialIndex={selectedFeed.initialIndex} 
+        onClose={() => setSelectedFeed(null)} 
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -204,9 +215,14 @@ export default function Wishlist() {
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={{ paddingBottom: 80, paddingTop: 8, paddingHorizontal: 8 }}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <View style={styles.cardWrapper}>
-              <WishlistCard item={item} onRemove={onRemove} onMoveToBag={onMoveToBag} />
+              <WishlistCard 
+                item={item} 
+                onRemove={onRemove} 
+                onMoveToBag={onMoveToBag} 
+                onCardPress={() => setSelectedFeed({ items, initialIndex: index })}
+              />
             </View>
           )}
           ListEmptyComponent={() => (

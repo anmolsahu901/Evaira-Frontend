@@ -150,6 +150,7 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }} bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
   {/* Main Content */}
   <View style={styles.contentWrapper}>
@@ -320,8 +321,9 @@ export default function LoginScreen() {
       </TouchableOpacity>
     </View>
 
-  </View>
+    </View>
 
+      </ScrollView>
 </ThemedView>
   );
 }
@@ -329,7 +331,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#ffffffff',
   },
   scrollContent: {
     paddingHorizontal: 24,
@@ -337,7 +339,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contentWrapper: {
-  flex: 1,
   paddingHorizontal: 24,
   paddingTop: 40,
   alignItems: 'center',
@@ -349,12 +350,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconImage: {
-    width: 80,
-    height: 80,
+    width: 70,
+    height: 70,
   },
   iconCircle: {
-    width: 80,
-    height: 80,
+    width: 70,
+    height: 70,
     borderRadius: 40,
     // backgroundColor: '#1a1a1a',
     justifyContent: 'center',
@@ -506,7 +507,7 @@ const styles = StyleSheet.create({
   },
   loginCard: {
   width: '100%',
-  backgroundColor: '#ebebeb',
+  backgroundColor: '#f5f5f5ff',
   borderRadius: 20,
   padding: 20,
   marginTop: 5,
@@ -515,7 +516,7 @@ const styles = StyleSheet.create({
 inputWrapper: {
   flexDirection: 'row',
   alignItems: 'center',
-  backgroundColor: '#f2f2f2',
+  backgroundColor: '#ffffffff',
   borderRadius: 10,
   paddingHorizontal: 12,
   height: 48,
@@ -556,13 +557,13 @@ securityBar: {
   alignItems: 'center',
   justifyContent: 'center',
   gap: 6,
-  backgroundColor: '#dadada', // or your gradient color
+  backgroundColor: '#f5f5f5ff', // or your gradient color
   alignSelf: 'center'
 },
 
 securityTextWhite: {
-  fontSize: 12,
-  color: '#fff',
+  fontSize: 13,
+  color: '#000000ff',
 },
 footerContainer: {
   flexDirection: 'row',

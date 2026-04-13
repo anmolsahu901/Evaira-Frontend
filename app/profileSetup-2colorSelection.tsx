@@ -1,13 +1,15 @@
 
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { useUserProfile } from '../context/UserProfileContext';
+import { submitUserProfile } from '../lib/profileAPI';
+import { useLocalSearchParams } from 'expo-router';
 
 type ColorOption = {
   key: string;
@@ -31,8 +33,10 @@ const COLOR_OPTIONS: ColorOption[] = [
 
 export default function FavoriteColorsScreen() {
   const router = useRouter();
+  const { isEditing } = useLocalSearchParams();
   const [selected, setSelected] = useState<string[]>([]);
-  const { setFavoriteColors } = useUserProfile();
+  const { setFavoriteColors, getProfileData } = useUserProfile();
+  const [loading, setLoading] = useState(false);
 
   const toggleColor = (colorName: string) => {
     if (selected.includes(colorName)) {
@@ -53,15 +57,33 @@ export default function FavoriteColorsScreen() {
     setSelected(shuffled.slice(0, 3));
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selected.length === 0) {
       alert('Please select at least one color');
       return;
     }
 
-    // Save colors into context, then continue to price bucket selection.
     setFavoriteColors(selected);
-    router.push('/profileSetup-3priceBucket' as any);
+
+    if (isEditing) {
+      setLoading(true);
+      try {
+        const profileData = { ...getProfileData(), favoriteColors: selected };
+        const response = await submitUserProfile(profileData);
+        if (response.success) {
+          router.push('/(tabs)/account');
+        } else {
+          alert(`Error: ${response.message}`);
+        }
+      } catch (e) {
+        console.error('Submit error:', e);
+        alert('Failed to update profile');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      router.push('/profileSetup-3priceBucket' as any);
+    }
   };
 
   return (
@@ -160,14 +182,14 @@ export default function FavoriteColorsScreen() {
       </ScrollView>
 
       {/* Bottom Button */}
-           <View style={styles.bottomWrap}>
-                               <TouchableOpacity style={styles.continueButton} onPress={handleContinue} >
-                                 <View style={styles.continueContent}>
-                                   <ThemedText style={styles.continueText}>Continue</ThemedText>
-                               
-                                 </View>
-                               </TouchableOpacity>
-                             </View>
+      <View style={styles.bottomWrap}>
+        <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={loading}>
+          <View style={styles.continueContent}>
+            <ThemedText style={styles.continueText}>{isEditing ? 'Update' : 'Continue'}</ThemedText>
+            {loading ? <ActivityIndicator color="#fff" /> : null}
+          </View>
+        </TouchableOpacity>
+      </View>
     </ThemedView>
   );
 }

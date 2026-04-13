@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { useUserProfile } from '../context/UserProfileContext';
+import { submitUserProfile } from '../lib/profileAPI';
+import { useLocalSearchParams } from 'expo-router';
 
 const STYLE_VIBES = [
   'MINIMAL',
@@ -49,8 +51,10 @@ const STYLE_IMAGES: Record<string, any> = {
 
 export default function StyleVibe1Screen() {
   const router = useRouter();
-  const { setStyleVibes } = useUserProfile();
+  const { isEditing } = useLocalSearchParams();
+  const { setStyleVibes, getProfileData } = useUserProfile();
   const [selected, setSelected] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const toggleOption = (item: string) => {
     setSelected((current) =>
@@ -65,7 +69,26 @@ export default function StyleVibe1Screen() {
     }
 
     setStyleVibes(selected);
-    router.push('/profileSetup-2colorSelection' as any);
+
+    if (isEditing) {
+      setLoading(true);
+      try {
+        const profileData = { ...getProfileData(), styleVibes: selected };
+        const response = await submitUserProfile(profileData);
+        if (response.success) {
+          router.push('/(tabs)/account');
+        } else {
+          alert(`Error: ${response.message}`);
+        }
+      } catch (e) {
+        console.error('Submit error:', e);
+        alert('Failed to update profile');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      router.push('/profileSetup-2colorSelection' as any);
+    }
   };
 
   const handleSurpriseMe = () => {
@@ -150,13 +173,13 @@ export default function StyleVibe1Screen() {
 
       {/* Bottom Button */}
      <View style={styles.bottomWrap}>
-                               <TouchableOpacity style={styles.continueButton} onPress={handleContinue} >
-                                 <View style={styles.continueContent}>
-                                   <ThemedText style={styles.continueText}>Continue</ThemedText>
-                               
-                                 </View>
-                               </TouchableOpacity>
-                             </View>
+       <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={loading}>
+         <View style={styles.continueContent}>
+           <ThemedText style={styles.continueText}>{isEditing ? 'Update' : 'Continue'}</ThemedText>
+           {loading ? <ActivityIndicator color="#fff" /> : null}
+         </View>
+       </TouchableOpacity>
+     </View>
 
     </ThemedView>
   );

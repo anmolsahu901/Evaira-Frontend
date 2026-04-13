@@ -38,7 +38,7 @@ const toHomeProduct = (item: any): HomeProduct => ({
   deeplinkUrl: item.deeplinkUrl,
 });
 
-const FeedView = ({ initialItems, initialIndex, onClose }: { initialItems: any[], initialIndex: number, onClose: () => void }) => {
+export const FeedView = ({ initialItems, initialIndex, onClose }: { initialItems: any[], initialIndex: number, onClose: () => void }) => {
   const wishlist = useWishlist();
   const [containerHeight, setContainerHeight] = useState(0);
 

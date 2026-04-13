@@ -123,11 +123,11 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
         {children}
 
         <Animated.View pointerEvents="none" style={[styles.badge, styles.likeBadge, { opacity: likeOpacity }]}> 
-          <Text style={[styles.badgeText, { color: '#00e676' }]}>LIKE</Text>
+          <Text style={[styles.badgeText, { color: '#00e676' }]}>OPEN</Text>
         </Animated.View>
 
         <Animated.View pointerEvents="none" style={[styles.badge, styles.nopeBadge, { opacity: nopeOpacity }]}> 
-          <Text style={[styles.badgeText, { color: '#ff1744' }]}>NOPE</Text>
+          <Text style={[styles.badgeText, { color: '#ff1744' }]}>DISLIKE</Text>
         </Animated.View>
       </Animated.View>
     </View>

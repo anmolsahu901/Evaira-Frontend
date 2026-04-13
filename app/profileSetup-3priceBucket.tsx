@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { ActivityIndicator, Image, StyleSheet, TouchableOpacity, View, Animated, PanResponder } from 'react-native';
 
+import { useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { useUserProfile } from '../context/UserProfileContext';
@@ -46,10 +47,11 @@ const PRICE_BUCKETS: Array<{
 
 export default function PriceBucketScreen() {
   const router = useRouter();
-  const { setPriceBucket } = useUserProfile();
+  const { isEditing } = useLocalSearchParams();
+  const { setPriceBucket, getProfileData } = useUserProfile();
 
   const [selectedBucket, setSelectedBucket] = useState<string>();
-  // const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [sliderWidth, setSliderWidth] = useState(0);
 
   const selectedIndex = useMemo(() => {
@@ -115,7 +117,26 @@ export default function PriceBucketScreen() {
     }
     console.log('Submitting price bucket:', selectedBucket);
     setPriceBucket(selectedBucket);
-    router.push('/profileSetup-4occasion');
+
+    if (isEditing) {
+      setLoading(true);
+      try {
+        const profileData = { ...getProfileData(), priceBucket: selectedBucket };
+        const response = await submitUserProfile(profileData);
+        if (response.success) {
+          router.push('/(tabs)/account');
+        } else {
+          alert(`Error: ${response.message}`);
+        }
+      } catch (e) {
+        console.error('Submit error:', e);
+        alert('Failed to update profile');
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      router.push('/profileSetup-4occasion');
+    }
   };
 
   return (
@@ -229,9 +250,10 @@ export default function PriceBucketScreen() {
 
       {/* Bottom Continue Button */}
       <View style={styles.bottomWrap}>
-        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+        <TouchableOpacity style={styles.continueButton} onPress={handleContinue} disabled={loading}>
           <View style={styles.continueContent}>
-            <ThemedText style={styles.continueText}>Continue</ThemedText>
+            <ThemedText style={styles.continueText}>{isEditing ? 'Update' : 'Continue'}</ThemedText>
+            {loading ? <ActivityIndicator color="#fff" /> : null}
           </View>
         </TouchableOpacity>
       </View>

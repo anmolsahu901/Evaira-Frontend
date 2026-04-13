@@ -81,7 +81,7 @@ export default function SplashScreen() {
             console.log('✅ Token validation successful. Token is valid. Navigating to home.');
             
             
-            router.replace('/(tabs)/home'); // [PERSIST_AUTH]
+            router.replace('/profileSetup-1styleVibe'); // [PERSIST_AUTH]
           //  router.replace('/login'); // [chang
           // es for testing ]
 

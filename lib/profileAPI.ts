@@ -2,6 +2,28 @@ import { UserProfile } from '../context/UserProfileContext';
 
 const BASE_URL = 'http://192.168.1.7:8080'; // Update with your backend URL
 
+export const fetchUserProfile = async (authToken: string) => {
+  try {
+    const response = await fetch(`${BASE_URL}/api/profile/me`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: authToken,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    return { success: false, data: null };
+  }
+};
+
 export const submitUserProfile = async (
   profile: UserProfile
 ): Promise<{ success: boolean; message: string }> => {
