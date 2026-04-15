@@ -251,6 +251,7 @@ export async function getProducts(): Promise<ApiResult> {
       shares: '0',
       bookmarks: '0',
       deeplinkUrl: apiProduct.deeplinkUrl || '', // Include deeplink from API
+      brand: apiProduct.brand || apiProduct.category || undefined,
       category: apiProduct.category || undefined,
       externalId: apiProduct.externalId || undefined,
       rating: apiProduct.rating || undefined,
@@ -344,6 +345,7 @@ export async function getProductsByUserAction(actionType: 'LIKE' | 'UNLIKE' | 'S
       shares: '0',
       bookmarks: '0',
       deeplinkUrl: apiProduct.deeplinkUrl || '',
+      brand: apiProduct.brand || apiProduct.category || undefined,
     }));
     
     return { ok: true, status: 200, data: mappedProducts };
@@ -370,6 +372,7 @@ export async function getProductsByUserAction(actionType: 'LIKE' | 'UNLIKE' | 'S
       shares: '0',
       bookmarks: '0',
       deeplinkUrl: apiProduct.deeplinkUrl || '', // Include deeplink from API
+      brand: apiProduct.brand || undefined,
       category: apiProduct.category || undefined,
       externalId: apiProduct.externalId || undefined,
       rating: apiProduct.rating || undefined,

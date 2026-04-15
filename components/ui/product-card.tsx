@@ -30,6 +30,7 @@ export interface Product {
   category?: string; // Product category (e.g., "men's clothing")
   externalId?: string; // External ID (e.g., Amazon ASIN)
   rating?: number; // Product rating (e.g., 4.6)
+  brand?: string; // Product brand name
 }
 
 interface ProductCardProps {
@@ -50,6 +51,43 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
   const [contentVisible, setContentVisible] = useState(true);
   const overlayOpacity = useRef(new Animated.Value(1)).current;
 
+  // Generate a consistent random color based on the brand name
+  const brandBgColor = React.useMemo(() => {
+    if (!product.brand) return 'rgba(35, 68, 255, 0.6)';
+    const colors = [
+      'rgba(233, 30, 99, 0.6)',     // Pink
+      'rgba(156, 39, 176, 0.6)',    // Purple
+      'rgba(63, 81, 181, 0.6)',     // Indigo
+      'rgba(0, 150, 136, 0.6)',     // Teal
+      'rgba(255, 152, 0, 0.6)',     // Orange
+      'rgba(244, 67, 54, 0.6)',     // Red
+      'rgba(121, 85, 72, 0.6)',     // Brown
+      'rgba(96, 125, 139, 0.6)',    // Blue Grey
+      'rgba(46, 204, 113, 0.6)',    // Emerald
+      'rgba(211, 84, 0, 0.6)',      // Pumpkin
+      'rgba(22, 160, 133, 0.6)',    // Green Sea
+      'rgba(41, 128, 185, 0.6)',    // Belize Blue
+      'rgba(142, 68, 173, 0.6)',    // Wisteria
+      'rgba(44, 62, 80, 0.6)',      // Midnight Blue
+      'rgba(230, 126, 34, 0.6)',    // Carrot Orange
+      'rgba(0, 188, 212, 0.6)',     // Cyan
+      'rgba(76, 175, 80, 0.6)',     // Light Green
+      'rgba(104, 159, 56, 0.6)',    // Grass Green
+      'rgba(69, 179, 157, 0.6)',    // Aqua
+      'rgba(175, 122, 197, 0.6)',   // Amethyst
+      'rgba(205, 92, 92, 0.6)',     // Indian Red
+      'rgba(46, 134, 193, 0.6)',    // Cobalt
+      'rgba(139, 13, 212, 0.6)',    // Gold
+      'rgba(39, 174, 96, 0.6)',     // Nephritis
+      'rgba(200, 50, 100, 0.6)'     // Berry
+    ];
+    let hash = 0;
+    for (let i = 0; i < product.brand.length; i++) {
+      hash = product.brand.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  }, [product.brand]);
+
   const toggleOverlay = () => {
     const nextValue = contentVisible ? 0 : 1;
     Animated.timing(overlayOpacity, {
@@ -63,11 +101,11 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
 
   const buttonBgColor = overlayOpacity.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#000000', '#ffffff']
+    outputRange: ['#00000028', '#ffffff']
   });
   const buttonTextColor = overlayOpacity.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#ffffff', '#000000']
+    outputRange: ['#ffffff', '#000000ff']
   });
 
   const formatCount = (n: number) => {
@@ -218,6 +256,12 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
 
         <Animated.View pointerEvents={contentVisible ? 'auto' : 'none'} style={[styles.overlay, { opacity: overlayOpacity }]}>
           <Pressable style={styles.productInfo} onPress={(e) => e.stopPropagation()}>
+            {product.brand ? (
+              <View style={[styles.brandButton, { backgroundColor: brandBgColor }]}>
+                <Ionicons name="pricetag" size={14} color="#fff" style={styles.brandIcon} />
+                <Text style={styles.productBrand}>{product.brand}</Text>
+              </View>
+            ) : null}
             <Text style={styles.productName}>{product.name}</Text>
             <Text style={styles.productPrice}>{product.price}</Text>
             <Text style={styles.productDescription} numberOfLines={3}>
@@ -299,7 +343,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 80,
     paddingTop: 40,
     backgroundColor: 'transparent',
     zIndex: 2,
@@ -308,9 +352,36 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 20,
   },
+  brandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  brandIcon: {
+    color: '#ffffffff',
+    marginRight: 6,
+    opacity: 0.85,
+  },
+  productBrand: {
+    color: '#ffffffff',
+    fontSize: 13,
+    fontWeight: '800',
+    opacity: 0.85,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+  },
   productName: {
     color: '#fff',
-    fontSize: 30,
+    fontSize: 25,
     fontWeight: '700',
     marginBottom: 6,
     textShadowColor: 'rgba(0, 0, 0, 0.8)',

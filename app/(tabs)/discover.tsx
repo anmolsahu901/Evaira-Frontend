@@ -14,7 +14,8 @@ import {
   Alert,
   Animated,
   Linking,
-  StatusBar
+  StatusBar,
+  BackHandler
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,6 +37,7 @@ const toHomeProduct = (item: any): HomeProduct => ({
   shares: '0',
   bookmarks: '0',
   deeplinkUrl: item.deeplinkUrl,
+  brand: item.brand,
 });
 
 export const FeedView = ({ initialItems, initialIndex, onClose }: { initialItems: any[], initialIndex: number, onClose: () => void }) => {
@@ -62,12 +64,19 @@ export const FeedView = ({ initialItems, initialIndex, onClose }: { initialItems
   };
 
   useEffect(() => {
+    const onBackPress = () => {
+      onClose();
+      return true; // prevent default behavior
+    };
+    const backHandlerSubscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
     return () => {
+      backHandlerSubscription.remove();
       if (undoTimerRef.current) {
         clearTimeout(undoTimerRef.current);
       }
     };
-  }, []);
+  }, [onClose]);
 
   const scheduleClearUndo = () => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
@@ -188,6 +197,7 @@ const mockRecommendedProducts = [
     brand: 'Manyavar',
     title: 'Straight Kurta',
     price: 'Rs.2999',
+    description: 'Elegant straight kurta crafted with fine fabric. Perfect for formal and semi-formal traditional settings.',
     badgeText: 'AI Pick',
     badgeColor: '#1f7a9b',
   },
@@ -196,6 +206,7 @@ const mockRecommendedProducts = [
     brand: 'Cellux',
     title: 'Printed Straight Kurta',
     price: 'Rs.1580',
+    description: 'Step out in style with this vibrantly printed straight kurta, blending contemporary motifs with classic tailoring.',
     badgeText: 'New',
     badgeColor: '#ac41d0',
   },
@@ -204,12 +215,14 @@ const mockRecommendedProducts = [
     brand: 'Koshin',
     title: 'Block Print Straight Kurta',
     price: 'Rs.1320',
+    description: 'Traditional block printed patterns on a breathable kurta. Ideal for everyday cultural elegance.',
   },
   {
     imageUri: 'https://rukminim2.flixcart.com/image/1280/1280/xif0q/kurta/n/d/5/xl-bnrsi-kurta-tsarina-original-imahh3m5yw4g5zyt.jpeg?q=90',
     brand: 'Tsarina',
     title: 'Design Straight Kurta',
     price: 'Rs.1780',
+    description: 'A sophisticated design straight kurta featuring intricate hem patterns and a comfortable fit for day-to-day wear.',
     badgeText: 'AI Pick',
     badgeColor: '#1f7a9b',
   },
@@ -221,6 +234,7 @@ const mockTrendingProducts = [
     brand: 'Hustle',
     title: 'Round Neck Blue T-Shirt',
     price: 'Rs.299',
+    description: 'A vibrant blue round neck t-shirt with premium stitching for an ultra-casual look.',
     badgeText: 'Bestseller',
     badgeColor: '#2b68f5',
   },
@@ -370,6 +384,13 @@ export default function Discover() {
   const insets = useSafeAreaInsets();
 
   const [selectedFeed, setSelectedFeed] = useState<{ items: any[], initialIndex: number } | null>(null);
+
+  // Automatically close fullscreen feed when navigating away from the discover tab
+  useFocusEffect(
+    useCallback(() => {
+      return () => setSelectedFeed(null);
+    }, [])
+  );
 
   const [recommendedData, setRecommendedData] = useState(mockRecommendedProducts);
   const [trendingData, setTrendingData] = useState(mockTrendingProducts);

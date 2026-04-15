@@ -71,7 +71,7 @@ export default function Wishlist() {
   const convertProductToWishlistItem = (product: any): WishlistItem => ({
     ...product,
     id: product.id, // Store database ID for API calls (productId)
-    brand: product.category || 'Product', // Use category as brand
+    brand: product.brand || 'Product', // Use category as brand
     name: product.title || 'Unknown Product',
     price: `₹${product.price || 0}`,
     imageUrl: product.imageUrl,
@@ -117,6 +117,9 @@ export default function Wishlist() {
     useCallback(() => {
       console.log('[Wishlist] Tab focused, refreshing products');
       fetchProducts();
+      
+      // Close fullscreen feed when navigating away from this tab
+      return () => setSelectedFeed(null);
     }, [fetchProducts])
   );
 

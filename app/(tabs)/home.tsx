@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image, Linking, Animated } from 'react-native';
+import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image, Linking, Animated, BackHandler, ToastAndroid, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProductCard, { Product } from '../../components/ui/product-card';
 import SwipeableCard from '../../components/ui/swipeable-card';
@@ -17,6 +17,7 @@ const mockProducts: Product[] = [
     likes: 1200000,
     shares: '10K',
     bookmarks: '5K',
+    brand: 'Elegance Paris'
   },
   {
     id: 'another-product1',
@@ -27,6 +28,7 @@ const mockProducts: Product[] = [
     likes: 800000,
     shares: '5K',
     bookmarks: '1.2K',
+    brand: 'Evaira Collection'
   },
   {
     id: 'another-product2',
@@ -37,6 +39,7 @@ const mockProducts: Product[] = [
     likes: 800000,
     shares: '5K',
     bookmarks: '1.2K',
+    brand: 'Studio Chic'
   }
   // Add more products as needed
 ];
@@ -63,6 +66,26 @@ export default function Home() {
   // Fetch products from API whenever the tab comes into focus
   useFocusEffect(
     useCallback(() => {
+      let backPressCount = 0;
+
+      const onBackPress = () => {
+        if (backPressCount === 0) {
+          backPressCount++;
+          if (Platform.OS === 'android') {
+            ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+          }
+          setTimeout(() => {
+            backPressCount = 0;
+          }, 2000);
+          return true;
+        } else {
+          BackHandler.exitApp();
+          return true;
+        }
+      };
+
+      const backSubscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
       const fetchProducts = async () => {
         try {
           setLoading(true);
@@ -84,6 +107,10 @@ export default function Home() {
       };
 
       fetchProducts();
+
+      return () => {
+        backSubscription.remove();
+      };
     }, [])
   );
 
