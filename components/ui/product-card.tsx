@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { sendLikeNotification, saveProduct, shareProduct, openProduct, likeProduct, unlikeProduct, dislikeProduct, trackProductSeen } from '../../lib/api';
+import { sendLikeNotification, saveProduct, shareProduct, openProduct, likeProduct, unlikeProduct, dislikeProduct } from '../../lib/api';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -51,10 +51,8 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
   const [contentVisible, setContentVisible] = useState(true);
   const overlayOpacity = useRef(new Animated.Value(1)).current;
 
-  // Track product as seen when it mounts/is viewed
-  useEffect(() => {
-    trackProductSeen(product.id);
-  }, [product.id]);
+  // NOTE: Seen tracking is handled by the parent FlatList visibility callback,
+  // because FlatList may mount adjacent items before they are actually visible.
 
   // Generate a consistent random color based on the brand name
   const brandBgColor = React.useMemo(() => {

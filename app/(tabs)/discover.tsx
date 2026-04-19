@@ -21,7 +21,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DiscoverCard from '../../components/ui/discover-card';
-import { getDiscoverData, sendLikeNotification, dislikeProduct } from '../../lib/api';
+import { getDiscoverData, sendLikeNotification, dislikeProduct, trackProductSeen } from '../../lib/api';
 import ProductCard, { Product as HomeProduct } from '../../components/ui/product-card';
 import SwipeableCard from '../../components/ui/swipeable-card';
 import { useWishlist } from '../../context/WishlistContext';
@@ -41,7 +41,7 @@ const toHomeProduct = (item: any): HomeProduct => ({
   brand: item.brand,
 });
 
-export const FeedView = ({ initialItems, initialIndex, onClose }: { initialItems: any[], initialIndex: number, onClose: () => void }) => {
+export const FeedView = ({ initialItems, initialIndex, onClose, disableSeenTracking = false }: { initialItems: any[], initialIndex: number, onClose: () => void, disableSeenTracking?: boolean }) => {
   const wishlist = useWishlist();
   const [containerHeight, setContainerHeight] = useState(0);
 
@@ -52,8 +52,19 @@ export const FeedView = ({ initialItems, initialIndex, onClose }: { initialItems
 
   const [swipedStack, setSwipedStack] = useState<Array<{ product: HomeProduct; direction: 'left' | 'right' }>>([]);
   const undoTimerRef = useRef<number | null>(null);
-  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const [headerOpacity] = useState(() => new Animated.Value(1));
   const [headerVisible, setHeaderVisible] = useState(true);
+  const seenProductIds = useRef<Set<string | number>>(new Set());
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 });
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<{ item: HomeProduct }> }) => {
+    if (disableSeenTracking) return;
+    viewableItems.forEach(({ item }) => {
+      if (!seenProductIds.current.has(item.id)) {
+        seenProductIds.current.add(item.id);
+        trackProductSeen(item.id);
+      }
+    });
+  }).current;
 
   const handleVisibilityChange = (visible: boolean) => {
     setHeaderVisible(visible);
@@ -160,6 +171,8 @@ export const FeedView = ({ initialItems, initialIndex, onClose }: { initialItems
                 <Text style={{ color: 'white', fontSize: 18 }}>No more products</Text>
               </View>
             )}
+            viewabilityConfig={viewabilityConfig.current}
+            onViewableItemsChanged={onViewableItemsChanged}
             getItemLayout={(_data, index) => ({ length: containerHeight, offset: containerHeight * index, index })}
           />
         )}

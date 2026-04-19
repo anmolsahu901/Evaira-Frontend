@@ -47,8 +47,9 @@ import * as SecureStore from 'expo-secure-store';
 import { fetchUserProfile } from '../../lib/profileAPI';
 
 const personalActivity: SectionLink[] = [
-  { key: 'wishlist', label: 'Wishlist & Curated', subLabel: '42 items saved', icon: 'heart-outline', route: '/wishlist' },
-  { key: 'recent', label: 'Recently Viewed', subLabel: '12 items', icon: 'time-outline' },
+  { key: 'wishlist', label: 'Wishlist & Curated', subLabel: 'products you saved', icon: 'heart-outline', route: '/wishlist' },
+  { key: 'recentlyViewed', label: 'Recently Viewed', subLabel: 'products you viewed', icon: 'time-outline', route: '/recentlyViewed' },
+  { key: 'recentlyOpened', label: 'Recently Opened', subLabel: 'products you opened', icon: 'eye-outline', route: '/recentlyOpened' },
 ];
 
 const supportLinks: SectionLink[] = [

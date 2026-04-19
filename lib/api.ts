@@ -13,7 +13,6 @@ export type ApiResult = {
   data?: any;
 };
 
-const API_URL = 'https://example.com/api/likes'; // ← Replace with your real endpoint
 const SEND_OTP_URL = 'http://192.168.1.7:8080/api/auth/send-otp';
 const VERIFY_OTP_URL = 'http://192.168.1.7:8080/api/auth/verify-otp';
 const PROFILE_CREATE_URL = 'http://192.168.1.7:8080/api/profile/create';

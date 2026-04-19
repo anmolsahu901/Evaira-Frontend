@@ -4,7 +4,7 @@ import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, 
 import { Ionicons } from '@expo/vector-icons';
 import ProductCard, { Product } from '../../components/ui/product-card';
 import SwipeableCard from '../../components/ui/swipeable-card';
-import { sendLikeNotification, getProducts, dislikeProduct, prefetchDiscoverData } from '../../lib/api';
+import { sendLikeNotification, getProducts, dislikeProduct, prefetchDiscoverData, trackProductSeen } from '../../lib/api';
 import { useWishlist } from '../../context/WishlistContext';
 
 const mockProducts: Product[] = [
@@ -51,8 +51,18 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [swipedStack, setSwipedStack] = useState<Array<{ product: Product; direction: 'left' | 'right' }>>([]);
   const undoTimerRef = useRef<number | null>(null);
-  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const [headerOpacity] = useState(() => new Animated.Value(1));
   const [headerVisible, setHeaderVisible] = useState(true);
+  const seenProductIds = useRef<Set<string | number>>(new Set());
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 });
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<{ item: Product }> }) => {
+    viewableItems.forEach(({ item }) => {
+      if (!seenProductIds.current.has(item.id)) {
+        seenProductIds.current.add(item.id);
+        trackProductSeen(item.id);
+      }
+    });
+  }).current;
 
   const handleVisibilityChange = (visible: boolean) => {
     setHeaderVisible(visible);
@@ -107,7 +117,7 @@ export default function Home() {
       };
 
       // this will load feed on focus of home screen only when feed is empty
-     if (products.length === 0) fetchProducts();
+      if (products.length === 0) fetchProducts();
 
 
       return () => {
@@ -119,7 +129,7 @@ export default function Home() {
   useEffect(() => {
     // Prefetch discover data when home screen opens
     prefetchDiscoverData().catch(e => console.log('Prefetch explore failed', e));
-    
+
     return () => {
       if (undoTimerRef.current) {
         clearTimeout(undoTimerRef.current);
@@ -245,6 +255,8 @@ export default function Home() {
                 <Text style={{ color: 'white', fontSize: 18 }}>No more products</Text>
               </View>
             )}
+            viewabilityConfig={viewabilityConfig.current}
+            onViewableItemsChanged={onViewableItemsChanged}
             getItemLayout={(_data, index) => ({
               length: containerHeight,
               offset: containerHeight * index,
@@ -261,8 +273,8 @@ export default function Home() {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Animated.View 
-          style={[styles.headerIcons, { opacity: headerOpacity }]} 
+        <Animated.View
+          style={[styles.headerIcons, { opacity: headerOpacity }]}
           pointerEvents={headerVisible ? 'auto' : 'none'}
         >
           <TouchableOpacity style={styles.headerIcon}>

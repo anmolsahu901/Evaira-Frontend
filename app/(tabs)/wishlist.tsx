@@ -117,7 +117,7 @@ export default function Wishlist() {
     useCallback(() => {
       console.log('[Wishlist] Tab focused, refreshing products');
       fetchProducts();
-      
+
       // Close fullscreen feed when navigating away from this tab
       return () => setSelectedFeed(null);
     }, [fetchProducts])
@@ -158,10 +158,11 @@ export default function Wishlist() {
 
   if (selectedFeed) {
     return (
-      <FeedView 
-        initialItems={selectedFeed.items} 
-        initialIndex={selectedFeed.initialIndex} 
-        onClose={() => setSelectedFeed(null)} 
+      <FeedView
+        initialItems={selectedFeed.items}
+        initialIndex={selectedFeed.initialIndex}
+        onClose={() => setSelectedFeed(null)}
+        disableSeenTracking={true}
       />
     );
   }
@@ -220,10 +221,10 @@ export default function Wishlist() {
           contentContainerStyle={{ paddingBottom: 80, paddingTop: 8, paddingHorizontal: 8 }}
           renderItem={({ item, index }) => (
             <View style={styles.cardWrapper}>
-              <WishlistCard 
-                item={item} 
-                onRemove={onRemove} 
-                onMoveToBag={onMoveToBag} 
+              <WishlistCard
+                item={item}
+                onRemove={onRemove}
+                onMoveToBag={onMoveToBag}
                 onCardPress={() => setSelectedFeed({ items, initialIndex: index })}
               />
             </View>
