@@ -17,11 +17,10 @@ const API_URL = 'https://example.com/api/likes'; // ← Replace with your real e
 const SEND_OTP_URL = 'http://192.168.1.7:8080/api/auth/send-otp';
 const VERIFY_OTP_URL = 'http://192.168.1.7:8080/api/auth/verify-otp';
 const PROFILE_CREATE_URL = 'http://192.168.1.7:8080/api/profile/create';
-const GET_PRODUCTS_URL = 'http://192.168.1.7:8080/api/user/products/getAllProducts';
+const GET_PRODUCTS_URL = 'http://192.168.1.7:8080/api/user/products/getHomeFeedProducts';
 const ACTIONS_URL = 'http://192.168.1.7:8080/api/actions'; // Like/Unlike endpoint
 const ACTIONS_BULK_URL = 'http://192.168.1.7:8080/api/actions/bulk/seen'; // Bulk actions endpoint
-const PRODUCT_BASED_ON_USER_ACTIONS_URL = 'http://192.168.1.7:8080/api/actions/basedOnUserActions'; // New endpoint for product recommendations based on user actions
-const WISHLIST_URL = 'http://192.168.1.7:8080/api/actions/getWishlistData';
+const WISHLIST_URL = 'http://192.168.1.7:8080/api/user/products/getWishlistData';
 const VALIDATE_TOKEN_URL = 'http://192.168.1.7:8080/api/profile/tokenValidation';
 const DISCOVER_URL = 'http://192.168.1.7:8080/api/discover/getData';
 // Development mock toggle:
@@ -341,93 +340,6 @@ export async function getWishlistData(actionType: 'LIKE' | 'SAVE'): Promise<ApiR
   }
 }
 
-// ✅ NEW: Fetch products based on user actions (SAVE, LIKE, etc.)
-// Returns a list of products that match the specified action type
-// Example: getProductsByUserAction('SAVE') returns all saved products
-export async function getProductsByUserAction(actionType: 'LIKE' | 'UNLIKE' | 'SAVE' | 'OPEN' | 'SHARE' | 'DISLIKE' | 'SEEN'): Promise<ApiResult> {
-  const force = isForceApiCall();
-  
-  // Dev-mode mock
-  if (USE_DEV_MOCKS && !force) {
-    console.log('[api] getProductsByUserAction: using dev mock', { actionType });
-    await new Promise(res => setTimeout(res, 300)); // simulate latency
-    
-    // Return mock products for development
-    const mockProducts = [
-      {
-        id: '1',
-        title: `${actionType} Product 1`,
-        price: 5000,
-        description: `Mock product with ${actionType} action`,
-        imageUrl: 'https://picsum.photos/400/600/?random=1',
-        likesCount: 100,
-        deeplinkUrl: 'evaira://product/1',
-        category: "men's clothing",
-        externalId: '5009',
-        rating: 4.6,
-      },
-      {
-        id: '2',
-        title: `${actionType} Product 2`,
-        price: 8000,
-        description: `Another mock product with ${actionType} action`,
-        imageUrl: 'https://picsum.photos/400/600/?random=2',
-        likesCount: 250,
-        deeplinkUrl: 'evaira://product/2',
-        category: "women's clothing",
-        externalId: '5010',
-        rating: 4.8,
-      },
-    ];
-    
-    const mappedProducts = mockProducts.map((apiProduct: any) => ({
-      id: String(apiProduct.id),
-      name: apiProduct.title || 'Unknown Product',
-      price: `₹${apiProduct.price || 0}`,
-      description: apiProduct.description || '',
-      imageUrl: apiProduct.imageUrl || '',
-      likes: apiProduct.likesCount || 0,
-      shares: '0',
-      bookmarks: '0',
-      deeplinkUrl: apiProduct.deeplinkUrl || '',
-      brand: apiProduct.brand || apiProduct.category || undefined,
-    }));
-    
-    return { ok: true, status: 200, data: mappedProducts };
-  }
-
-  console.log('[api] getProductsByUserAction: performing real request', { actionType, force });
-
-  // Pass actionType as query parameter (GET requests cannot have body)
-  const urlWithParams = `${PRODUCT_BASED_ON_USER_ACTIONS_URL}?actionType=${actionType}`;
-  
-  const result = await authenticatedFetch(urlWithParams, {
-    method: 'GET',
-  });
-
-  if (result.ok && result.data && Array.isArray(result.data)) {
-    // Map API response to Product interface
-    const mappedProducts = result.data.map((apiProduct: any) => ({
-      id: String(apiProduct.id),
-      name: apiProduct.title || 'Unknown Product',
-      price: `₹${apiProduct.price || 0}`,
-      description: apiProduct.description || '',
-      imageUrl: apiProduct.imageUrl || '',
-      likes: apiProduct.likesCount || 0,
-      shares: '0',
-      bookmarks: '0',
-      deeplinkUrl: apiProduct.deeplinkUrl || '', // Include deeplink from API
-      brand: apiProduct.brand || undefined,
-      category: apiProduct.category || undefined,
-      externalId: apiProduct.externalId || undefined,
-      rating: apiProduct.rating || undefined,
-    }));
-    return { ok: true, status: result.status, data: mappedProducts };
-  }
-
-  return result;
-}
-
 // ✅ Cache variables for Discover Data
 let discoverCache: ApiResult | null = null;
 let discoverPromise: Promise<ApiResult> | null = null;
@@ -435,7 +347,7 @@ let discoverPromise: Promise<ApiResult> | null = null;
 // ✅ NEW: Prefetch Discover Screen Data
 export async function prefetchDiscoverData(): Promise<ApiResult> {
   if (discoverPromise) return discoverPromise;
-  
+   console.log('the discover API is hit');
   discoverPromise = authenticatedFetch(DISCOVER_URL, {
     method: 'POST',
   }).then(result => {

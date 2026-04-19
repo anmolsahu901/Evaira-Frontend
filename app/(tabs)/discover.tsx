@@ -15,7 +15,8 @@ import {
   Animated,
   Linking,
   StatusBar,
-  BackHandler
+  BackHandler,
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -397,79 +398,88 @@ export default function Discover() {
   const [seasonalSaleData, setSeasonalSaleData] = useState(mockSeasonalSaleProducts);
   const [newArrivalData, setNewArrivalData] = useState(mockNewArrivalProducts);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchDiscoverData = async (isMounted = true, forceRefresh = false) => {
+    try {
+      const res = await getDiscoverData(forceRefresh);
+      if (res.ok && res.data && isMounted) {
+        const data = res.data;
+        if (data.recommended?.length) {
+          setRecommendedData(data.recommended.map((item: any) => ({
+            ...item,
+            imageUri: item.imageUrl,
+            brand: item.brand || item.category || 'Product',
+            title: item.title,
+            price: `Rs.${item.price}`,
+            badgeText: 'AI Pick',
+            badgeColor: '#1f7a9b',
+            deeplinkUrl: item.deeplinkUrl
+          })));
+        }
+        if (data.newArrivals?.length) {
+          setNewArrivalData(data.newArrivals.map((item: any) => ({
+            ...item,
+            imageUri: item.imageUrl,
+            brand: item.brand || item.category || 'Product',
+            title: item.title,
+            price: `Rs.${item.price}`,
+            badgeText: 'NEW',
+            badgeColor: '#ac41d0',
+            deeplinkUrl: item.deeplinkUrl
+          })));
+        }
+        if (data.trending?.length) {
+          setTrendingData(data.trending.map((item: any) => {
+            const isBestseller = Math.random() > 0.5;
+            return {
+              ...item,
+              imageUri: item.imageUrl,
+              brand: item.brand || item.category || 'Product',
+              title: item.title,
+              price: `Rs.${item.price}`,
+              badgeText: isBestseller ? 'Bestseller' : undefined,
+              badgeColor: isBestseller ? '#2b68f5' : undefined,
+              deeplinkUrl: item.deeplinkUrl
+            };
+          }));
+        }
+        if (data.seasonalSale?.length) {
+          setSeasonalSaleData(data.seasonalSale.map((item: any) => {
+            const x = Math.floor(Math.random() * 5) + 1; // 1 to 5
+            return {
+              ...item,
+              imageUri: item.imageUrl,
+              brand: item.brand || item.category || 'Product',
+              title: item.title,
+              price: `Rs.${item.price}`,
+              oldPrice: `Rs.${Math.round(item.price / (1 - (x * 10) / 100))}`,
+              badgeText: `${x * 10}% OFF`,
+              badgeColor: '#1db954',
+              deeplinkUrl: item.deeplinkUrl
+            };
+          }));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch discover data', e);
+    }
+  };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchDiscoverData(true, true);
+    setRefreshing(false);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
-    const fetchData = async () => {
+    const initialFetch = async () => {
       setLoading(true);
-      try {
-        const res = await getDiscoverData();
-        if (res.ok && res.data && isMounted) {
-          const data = res.data;
-          if (data.recommended?.length) {
-            setRecommendedData(data.recommended.map((item: any) => ({
-              ...item,
-              imageUri: item.imageUrl,
-              brand: item.brand || item.category || 'Product',
-              title: item.title,
-              price: `Rs.${item.price}`,
-              badgeText: 'AI Pick',
-              badgeColor: '#1f7a9b',
-              deeplinkUrl: item.deeplinkUrl
-            })));
-          }
-          if (data.newArrivals?.length) {
-            setNewArrivalData(data.newArrivals.map((item: any) => ({
-              ...item,
-              imageUri: item.imageUrl,
-              brand: item.brand || item.category || 'Product',
-              title: item.title,
-              price: `Rs.${item.price}`,
-              badgeText: 'NEW',
-              badgeColor: '#ac41d0',
-              deeplinkUrl: item.deeplinkUrl
-            })));
-          }
-          if (data.trending?.length) {
-            setTrendingData(data.trending.map((item: any) => {
-              const isBestseller = Math.random() > 0.5;
-              return {
-                ...item,
-                imageUri: item.imageUrl,
-                brand: item.brand || item.category || 'Product',
-                title: item.title,
-                price: `Rs.${item.price}`,
-                badgeText: isBestseller ? 'Bestseller' : undefined,
-                badgeColor: isBestseller ? '#2b68f5' : undefined,
-                deeplinkUrl: item.deeplinkUrl
-              };
-            }));
-          }
-          if (data.seasonalSale?.length) {
-            setSeasonalSaleData(data.seasonalSale.map((item: any) => {
-              const x = Math.floor(Math.random() * 5) + 1; // 1 to 5
-              return {
-                ...item,
-                imageUri: item.imageUrl,
-                brand: item.brand || item.category || 'Product',
-                title: item.title,
-                price: `Rs.${item.price}`,
-                oldPrice: `Rs.${Math.round(item.price / (1 - (x * 10) / 100))}`,
-                badgeText: `${x * 10}% OFF`,
-                badgeColor: '#1db954',
-                deeplinkUrl: item.deeplinkUrl
-              };
-            }));
-          }
-        }
-      } catch (e) {
-        console.error('Failed to fetch discover data', e);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
+      await fetchDiscoverData(isMounted);
+      if (isMounted) setLoading(false);
     };
-
-    fetchData();
+    initialFetch();
     return () => { isMounted = false; };
   }, []);
 
@@ -483,6 +493,9 @@ export default function Discover() {
       style={styles.screen}
       contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 24 }]}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#243f70" colors={["#243f70"]} />
+      }
     >
       <View style={styles.pageHeader}>
         <View style={styles.headerSide}>
