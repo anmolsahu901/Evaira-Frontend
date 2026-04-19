@@ -106,12 +106,14 @@ export default function Home() {
         }
       };
 
-      fetchProducts();
+      // this will load feed on focus of home screen only when feed is empty
+     if (products.length === 0) fetchProducts();
+
 
       return () => {
         backSubscription.remove();
       };
-    }, [])
+    }, [products.length])
   );
 
   useEffect(() => {
