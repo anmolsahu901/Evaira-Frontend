@@ -278,32 +278,58 @@ export async function validateToken(): Promise<boolean> {
 
 // ✅ NEW: Fetch products with JWT authentication
 // Maps API response to frontend Product interface
-export async function getProducts(): Promise<ApiResult> {
-  const result = await authenticatedFetch(GET_PRODUCTS_URL, {
-    method: 'GET',
-  });
+let homeCache: ApiResult | null = null;
+let homePromise: Promise<ApiResult> | null = null;
 
-  if (result.ok && result.data && Array.isArray(result.data)) {
-    // Map API response to Product interface
-    const mappedProducts = result.data.map((apiProduct: any) => ({
-      id: String(apiProduct.id),
-      name: apiProduct.title || 'Unknown Product',
-      price: `₹${apiProduct.price || 0}`,
-      description: apiProduct.description || '',
-      imageUrl: apiProduct.imageUrl || '',
-      likes: apiProduct.likesCount || 0,
-      shares: '0',
-      bookmarks: '0',
-      deeplinkUrl: apiProduct.deeplinkUrl || '', // Include deeplink from API
-      brand: apiProduct.brand || apiProduct.category || undefined,
-      category: apiProduct.category || undefined,
-      externalId: apiProduct.externalId || undefined,
-      rating: apiProduct.rating || undefined,
-    }));
-    return { ok: true, status: result.status, data: mappedProducts };
+export async function prefetchHomeData(): Promise<ApiResult> {
+  if (homePromise) return homePromise;
+  
+  homePromise = (async () => {
+    try {
+      const result = await authenticatedFetch(GET_PRODUCTS_URL, {
+        method: 'GET',
+      });
+
+      if (result.ok && result.data && Array.isArray(result.data)) {
+        // Map API response to Product interface
+        const mappedProducts = result.data.map((apiProduct: any) => ({
+          id: String(apiProduct.id),
+          name: apiProduct.title || 'Unknown Product',
+          price: `₹${apiProduct.price || 0}`,
+          description: apiProduct.description || '',
+          imageUrl: apiProduct.imageUrl || '',
+          likes: apiProduct.likesCount || 0,
+          shares: '0',
+          bookmarks: '0',
+          deeplinkUrl: apiProduct.deeplinkUrl || '', // Include deeplink from API
+          brand: apiProduct.brand || apiProduct.category || undefined,
+          category: apiProduct.category || undefined,
+          externalId: apiProduct.externalId || undefined,
+          rating: apiProduct.rating || undefined,
+        }));
+        const finalResult = { ok: true, status: result.status, data: mappedProducts };
+        homeCache = finalResult;
+        return finalResult;
+      }
+      return result;
+    } catch (e) {
+      console.error('Error prefetching home data', e);
+      return { ok: false, status: 0, data: { error: e } };
+    }
+  })();
+
+  return homePromise;
+}
+
+export async function getProducts(forceRefresh = false): Promise<ApiResult> {
+  if (forceRefresh) {
+    homePromise = null;
+    homeCache = null;
   }
+  if (homeCache) return homeCache;
+  if (homePromise) return homePromise;
 
-  return result;
+  return prefetchHomeData();
 }
 
 // ✅ NEW: Fetch wishlist data (SAVE or LIKE products)

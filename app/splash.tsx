@@ -13,7 +13,7 @@ import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { Images } from '../constants/images';
 import { useUserProfile } from '../context/UserProfileContext';
-import { validateToken } from '../lib/api';
+import { validateToken, prefetchHomeData } from '../lib/api';
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -80,6 +80,8 @@ export default function SplashScreen() {
 
             console.log('✅ Token validation successful. Token is valid. Navigating to home.');
             
+            // PREFETCH DATA EARLY! Start fetching Home data before navigating
+            prefetchHomeData().catch(e => console.log('Prefetch home data failed', e));
             
             router.replace('/home'); // [PERSIST_AUTH]
           //  router.replace('/login'); // [chang

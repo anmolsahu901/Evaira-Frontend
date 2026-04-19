@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image, Linking, Animated, BackHandler, ToastAndroid, Platform } from 'react-native';
+import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image, Linking, Animated, BackHandler, ToastAndroid, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProductCard, { Product } from '../../components/ui/product-card';
 import SwipeableCard from '../../components/ui/swipeable-card';
@@ -251,8 +251,16 @@ export default function Home() {
             windowSize={3}
             extraData={products}
             ListEmptyComponent={() => (
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ color: 'white', fontSize: 18 }}>No more products</Text>
+              <View style={{ flex: 1, height: containerHeight, justifyContent: 'center', alignItems: 'center' }}>
+                {loading ? (
+                  <>
+                    <ActivityIndicator size="large" color="#ffffff" style={{ marginBottom: 20 }} />
+                    <Text style={{ color: 'white', fontSize: 16, fontWeight: '500', letterSpacing: 1.5 }}>CURATING YOUR STYLE...</Text>
+                    <Text style={{ color: '#888', fontSize: 13, marginTop: 8 }}>Evaira is getting everything ready for you</Text>
+                  </>
+                ) : (
+                  <Text style={{ color: 'white', fontSize: 18 }}>No more products</Text>
+                )}
               </View>
             )}
             viewabilityConfig={viewabilityConfig.current}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { openProduct } from '../../lib/api';
 
 export type WishlistItem = {
   id: string | number;
@@ -34,6 +35,14 @@ export default function WishlistCard({ item, onRemove, onMoveToBag, onCardPress 
       if (canOpen) {
         console.log('[WishlistCard] Opening deeplink:', item.deeplinkUrl);
         await Linking.openURL(item.deeplinkUrl);
+        
+        // Track the product OPEN action
+        try {
+          await openProduct(item.id);
+          console.log('[WishlistCard] Logged OPEN action for item:', item.id);
+        } catch (apiErr) {
+          console.warn('[WishlistCard] Failed to log OPEN action:', apiErr);
+        }
       } else {
         Alert.alert('Error', 'Unable to open product link');
         console.warn('[WishlistCard] Cannot open URL:', item.deeplinkUrl);
