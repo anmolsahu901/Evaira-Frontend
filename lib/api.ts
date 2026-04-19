@@ -20,6 +20,7 @@ const GET_PRODUCTS_URL = 'http://192.168.1.7:8080/api/user/products/getHomeFeedP
 const ACTIONS_URL = 'http://192.168.1.7:8080/api/actions'; // Like/Unlike endpoint
 const ACTIONS_BULK_URL = 'http://192.168.1.7:8080/api/actions/bulk/seen'; // Bulk actions endpoint
 const WISHLIST_URL = 'http://192.168.1.7:8080/api/user/products/getWishlistData';
+const RECENT_PRODUCTS_URL = 'http://192.168.1.7:8080/api/user/products/getProductBasedOnAction';
 const VALIDATE_TOKEN_URL = 'http://192.168.1.7:8080/api/profile/tokenValidation';
 const DISCOVER_URL = 'http://192.168.1.7:8080/api/discover/getData';
 // Development mock toggle:
@@ -335,6 +336,37 @@ export async function getWishlistData(actionType: 'LIKE' | 'SAVE'): Promise<ApiR
     }
   } catch (error) {
     console.error('[api] getWishlistData: error occurred', { actionType, error });
+    return { ok: false, status: 0, data: [] };
+  }
+}
+
+// ✅ NEW: Fetch products based on recent actions (SEEN, OPEN)
+export async function getProductBasedOnAction(actionType: 'SEEN' | 'OPEN'): Promise<ApiResult> {
+  try {
+    const payload = { actionType };
+    console.log('[api] getProductBasedOnAction: starting request', { payload });
+
+    // Note: Using POST here because fetch() will throw an error if GET has a body.
+    // If the backend strictly expects GET, the backend should be updated to use @PostMapping,
+    // just like getWishlistData uses @PostMapping.
+    const result = await authenticatedFetch(RECENT_PRODUCTS_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    console.log('[api] getProductBasedOnAction: received response', { status: result.status, ok: result.ok });
+
+    if (result.ok && result.data && Array.isArray(result.data)) {
+      console.log(`[api] getProductBasedOnAction: successfully fetched ${result.data.length} products`, { actionType });
+      return result;
+    } else if (Array.isArray(result.data)) {
+      return { ok: true, status: result.status, data: [] };
+    } else {
+      console.warn('[api] getProductBasedOnAction: invalid response format', { actionType, status: result.status, data: result.data });
+      return { ok: false, status: result.status || 500, data: [] };
+    }
+  } catch (error) {
+    console.error('[api] getProductBasedOnAction: error occurred', { actionType, error });
     return { ok: false, status: 0, data: [] };
   }
 }

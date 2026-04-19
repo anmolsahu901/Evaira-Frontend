@@ -55,11 +55,11 @@ export const FeedView = ({ initialItems, initialIndex, onClose, disableSeenTrack
   const [headerOpacity] = useState(() => new Animated.Value(1));
   const [headerVisible, setHeaderVisible] = useState(true);
   const seenProductIds = useRef<Set<string | number>>(new Set());
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 });
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<{ item: HomeProduct }> }) => {
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 80 });
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<{ item: HomeProduct, isViewable: boolean }> }) => {
     if (disableSeenTracking) return;
-    viewableItems.forEach(({ item }) => {
-      if (!seenProductIds.current.has(item.id)) {
+    viewableItems.forEach(({ item, isViewable }) => {
+      if (isViewable && !seenProductIds.current.has(item.id)) {
         seenProductIds.current.add(item.id);
         trackProductSeen(item.id);
       }

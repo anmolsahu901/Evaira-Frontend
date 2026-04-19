@@ -54,10 +54,10 @@ export default function Home() {
   const [headerOpacity] = useState(() => new Animated.Value(1));
   const [headerVisible, setHeaderVisible] = useState(true);
   const seenProductIds = useRef<Set<string | number>>(new Set());
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 });
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<{ item: Product }> }) => {
-    viewableItems.forEach(({ item }) => {
-      if (!seenProductIds.current.has(item.id)) {
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 80 });
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: Array<{ item: Product, isViewable: boolean }> }) => {
+    viewableItems.forEach(({ item, isViewable }) => {
+      if (isViewable && !seenProductIds.current.has(item.id)) {
         seenProductIds.current.add(item.id);
         trackProductSeen(item.id);
       }

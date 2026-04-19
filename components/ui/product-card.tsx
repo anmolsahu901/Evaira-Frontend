@@ -243,7 +243,7 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
       <Pressable style={styles.container} onPress={toggleOverlay}>
         {/* Top Gradient - Simple vertical fade */}
         <AnimatedLinearGradient
-          colors={['rgba(0, 0, 0, 0.8)', 'rgba(0, 0, 0, 0.5)', 'rgba(0, 0, 0, 0.2)', 'rgba(0, 0, 0, 0)']}
+          colors={['rgba(0, 0, 0, 0.8)', 'rgba(0, 0, 0, 0.4)', 'rgba(0, 0, 0, 0.1)', 'rgba(0, 0, 0, 0)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={[styles.topGradientOverlay, { opacity: overlayOpacity }]}

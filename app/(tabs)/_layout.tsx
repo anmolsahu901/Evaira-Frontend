@@ -109,6 +109,18 @@ export default function TabLayout() {
               // tabBarLabel: () => null,
             }}
           />
+          <Tabs.Screen
+            name="recentlyViewed"
+            options={{
+              href: null,
+            }}
+          />
+          <Tabs.Screen
+            name="recentlyOpened"
+            options={{
+              href: null,
+            }}
+          />
         </Tabs>
       </SafeAreaView>
     </>
