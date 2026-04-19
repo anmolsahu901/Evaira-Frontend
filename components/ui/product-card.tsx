@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Text,
   View,
@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { sendLikeNotification, saveProduct, shareProduct, openProduct, likeProduct, unlikeProduct, dislikeProduct } from '../../lib/api';
+import { sendLikeNotification, saveProduct, shareProduct, openProduct, likeProduct, unlikeProduct, dislikeProduct, trackProductSeen } from '../../lib/api';
 
 const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
@@ -50,6 +50,11 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
   const [shareCount, setShareCount] = useState(parseInt(product.shares) || 0);
   const [contentVisible, setContentVisible] = useState(true);
   const overlayOpacity = useRef(new Animated.Value(1)).current;
+
+  // Track product as seen when it mounts/is viewed
+  useEffect(() => {
+    trackProductSeen(product.id);
+  }, [product.id]);
 
   // Generate a consistent random color based on the brand name
   const brandBgColor = React.useMemo(() => {

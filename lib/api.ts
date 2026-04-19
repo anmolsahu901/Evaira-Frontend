@@ -4,7 +4,7 @@ import { useUserProfile } from '../context/UserProfileContext';
 
 export type SendLikePayload = {
   productId: number | string;
-  actionType: 'LIKE' | 'UNLIKE' | 'SAVE' | 'UNSAVE' | 'OPEN' | 'SHARE' | 'DISLIKE';
+  actionType: 'LIKE' | 'UNLIKE' | 'SAVE' | 'UNSAVE' | 'OPEN' | 'SHARE' | 'DISLIKE' | 'SEEN';
 };
 
 export type ApiResult = {
@@ -19,6 +19,7 @@ const VERIFY_OTP_URL = 'http://192.168.1.7:8080/api/auth/verify-otp';
 const PROFILE_CREATE_URL = 'http://192.168.1.7:8080/api/profile/create';
 const GET_PRODUCTS_URL = 'http://192.168.1.7:8080/api/user/products/getAllProducts';
 const ACTIONS_URL = 'http://192.168.1.7:8080/api/actions'; // Like/Unlike endpoint
+const ACTIONS_BULK_URL = 'http://192.168.1.7:8080/api/actions/bulk/seen'; // Bulk actions endpoint
 const PRODUCT_BASED_ON_USER_ACTIONS_URL = 'http://192.168.1.7:8080/api/actions/basedOnUserActions'; // New endpoint for product recommendations based on user actions
 const WISHLIST_URL = 'http://192.168.1.7:8080/api/actions/getWishlistData';
 const VALIDATE_TOKEN_URL = 'http://192.168.1.7:8080/api/profile/tokenValidation';
@@ -135,6 +136,50 @@ export async function shareProduct(productId: number | string): Promise<ApiResul
 
 export async function dislikeProduct(productId: number | string): Promise<ApiResult> {
   return sendLikeNotification({ productId, actionType: 'DISLIKE' });
+}
+
+// ✅ NEW: Batch SEEN products
+let seenProductsQueue: Set<string | number> = new Set();
+let seenBatchTimer: ReturnType<typeof setTimeout> | null = null;
+
+export async function flushSeenProducts() {
+  if (seenProductsQueue.size === 0) return;
+  const ids = Array.from(seenProductsQueue);
+  seenProductsQueue.clear();
+  
+  if (seenBatchTimer) {
+    clearTimeout(seenBatchTimer);
+    seenBatchTimer = null;
+  }
+
+  try {
+    const force = isForceApiCall();
+    if (USE_DEV_MOCKS && !force) {
+      console.log('[api] flushSeenProducts: using dev mock', { actionType: 'SEEN', productIds: ids });
+      return;
+    }
+
+    console.log('[api] flushSeenProducts: performing real request', { actionType: 'SEEN', productIds: ids });
+    await authenticatedFetch(ACTIONS_BULK_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        actionType: 'SEEN',
+        productIds: ids,
+      }),
+    });
+  } catch (e) {
+    console.error('Failed to batch send SEEN actions', e);
+  }
+}
+
+export function trackProductSeen(productId: string | number) {
+  seenProductsQueue.add(productId);
+
+  if (!seenBatchTimer) {
+    seenBatchTimer = setTimeout(() => {
+      flushSeenProducts();
+    }, 15000); // 15 seconds
+  }
 }
 
 export async function sendOtp(email: string): Promise<ApiResult> {
@@ -299,7 +344,7 @@ export async function getWishlistData(actionType: 'LIKE' | 'SAVE'): Promise<ApiR
 // ✅ NEW: Fetch products based on user actions (SAVE, LIKE, etc.)
 // Returns a list of products that match the specified action type
 // Example: getProductsByUserAction('SAVE') returns all saved products
-export async function getProductsByUserAction(actionType: 'LIKE' | 'UNLIKE' | 'SAVE' | 'OPEN' | 'SHARE' | 'DISLIKE'): Promise<ApiResult> {
+export async function getProductsByUserAction(actionType: 'LIKE' | 'UNLIKE' | 'SAVE' | 'OPEN' | 'SHARE' | 'DISLIKE' | 'SEEN'): Promise<ApiResult> {
   const force = isForceApiCall();
   
   // Dev-mode mock
