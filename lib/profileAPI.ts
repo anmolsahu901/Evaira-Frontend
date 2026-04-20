@@ -1,6 +1,6 @@
 import { UserProfile } from '../context/UserProfileContext';
 
-const BASE_URL = 'http://192.168.1.7:8080'; // Update with your backend URL
+const BASE_URL = 'https://evaira-backend.onrender.com'; // Update with your backend URL
 
 export const fetchUserProfile = async (authToken: string) => {
   try {
