@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import { ActivityIndicator, Image, StyleSheet, TextInput, TouchableOpacity, View, ScrollView, BackHandler, ToastAndroid, Platform, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -20,7 +20,32 @@ export default function LoginScreen() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | null>(null);
   const router = useRouter();
-  const {  setAuthToken } = useUserProfile();
+  const { setAuthToken } = useUserProfile();
+  const backPressCount = useRef(0);
+
+  // Handle back press - require double press to exit
+  useEffect(() => {
+    const onBackPress = () => {
+      if (backPressCount.current === 0) {
+        backPressCount.current += 1;
+        if (Platform.OS === 'android') {
+          ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+        } else {
+          Alert.alert('Exit App', 'Press back again to exit', [{ text: 'OK' }]);
+        }
+        setTimeout(() => {
+          backPressCount.current = 0;
+        }, 2000);
+        return true;
+      } else {
+        BackHandler.exitApp();
+        return true;
+      }
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => backHandler.remove();
+  }, []);
 
   const handleSendOtp = async () => {
     if (!email.trim()) {
@@ -146,185 +171,185 @@ export default function LoginScreen() {
 
   const handleSignUp = () => {
     router.push('/createProfile' as any);
-  }; 
+  };
 
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }} bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-  {/* Main Content */}
-  <View style={styles.contentWrapper}>
+        {/* Main Content */}
+        <View style={styles.contentWrapper}>
 
-    {/* Lightning Icon */}
-    <View style={styles.iconContainer}>
-      <View style={styles.iconCircle}>
-        <Image
-          source={require('../assets/circle_icon.png')}
-          style={styles.iconImage}
-          resizeMode="contain"
-        />
-      </View>
-    </View>
+          {/* Lightning Icon */}
+          <View style={styles.iconContainer}>
+            <View style={styles.iconCircle}>
+              <Image
+                source={require('../assets/circle_icon.png')}
+                style={styles.iconImage}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
 
-    {/* Title */}
-    <ThemedText style={styles.title}>Your AI stylist is waiting.</ThemedText>
-    <ThemedText style={styles.subtitle}>Sign in to see today's curated look.</ThemedText>
+          {/* Title */}
+          <ThemedText style={styles.title}>Your AI stylist is waiting.</ThemedText>
+          <ThemedText style={styles.subtitle}>Sign in to see today's curated look.</ThemedText>
 
-    {/* LOGIN CARD */}
-    <View style={styles.loginCard}>
+          {/* LOGIN CARD */}
+          <View style={styles.loginCard}>
 
-      {/* Email */}
-      <View style={styles.formSection}>
-        <ThemedText style={styles.label}>EMAIL ADDRESS</ThemedText>
+            {/* Email */}
+            <View style={styles.formSection}>
+              <ThemedText style={styles.label}>EMAIL ADDRESS</ThemedText>
 
-        <View style={styles.inputWrapper}>
-          <MaterialCommunityIcons name="email-outline" size={18} color="#777" />
+              <View style={styles.inputWrapper}>
+                <MaterialCommunityIcons name="email-outline" size={18} color="#777" />
 
-          <TextInput
-            style={styles.inputField}
-            placeholder="name@example.com"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={(value) => {
-              setEmail(value);
-              if (otpSent) {
-                setOtpSent(false);
-                setMessage('');
-                setMessageType(null);
-                setOtp('');
-              }
-            }}
-          />
-        </View>
-      </View>
+                <TextInput
+                  style={styles.inputField}
+                  placeholder="name@example.com"
+                  placeholderTextColor="#999"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  value={email}
+                  onChangeText={(value) => {
+                    setEmail(value);
+                    if (otpSent) {
+                      setOtpSent(false);
+                      setMessage('');
+                      setMessageType(null);
+                      setOtp('');
+                    }
+                  }}
+                />
+              </View>
+            </View>
 
-      {/* Message */}
-      {message ? (
-        <ThemedText
-          style={[
-            styles.messageText,
-            messageType === 'error'
-              ? styles.messageError
-              : styles.messageSuccess,
-          ]}
-        >
-          {message}
-        </ThemedText>
-      ) : null}
-
-      {/* OTP */}
-      {otpSent && (
-        <View style={styles.formSection}>
-          <View style={styles.otpHeader}>
-            <ThemedText style={styles.label}>OTP</ThemedText>
-
-            <TouchableOpacity onPress={handleResendOtp} disabled={resending}>
-              <ThemedText style={styles.resendText}>
-                {resending ? 'Resending...' : 'Resend?'}
+            {/* Message */}
+            {message ? (
+              <ThemedText
+                style={[
+                  styles.messageText,
+                  messageType === 'error'
+                    ? styles.messageError
+                    : styles.messageSuccess,
+                ]}
+              >
+                {message}
               </ThemedText>
+            ) : null}
+
+            {/* OTP */}
+            {otpSent && (
+              <View style={styles.formSection}>
+                <View style={styles.otpHeader}>
+                  <ThemedText style={styles.label}>OTP</ThemedText>
+
+                  <TouchableOpacity onPress={handleResendOtp} disabled={resending}>
+                    <ThemedText style={styles.resendText}>
+                      {resending ? 'Resending...' : 'Resend?'}
+                    </ThemedText>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.inputWrapper}>
+                  <MaterialCommunityIcons name="lock-outline" size={18} color="#777" />
+
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="OTP"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={otp}
+                    onChangeText={setOtp}
+                  />
+                </View>
+              </View>
+            )}
+
+            {/* Button */}
+            <TouchableOpacity
+              style={[
+                styles.primaryButton,
+                (sending || verifying) && styles.buttonDisabled,
+              ]}
+              onPress={otpSent ? handleContinue : handleSendOtp}
+              disabled={sending || verifying}
+            >
+              {sending || verifying ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <View style={styles.buttonContent}>
+                  <ThemedText style={styles.primaryButtonText}>
+                    {otpSent ? 'VERIFY OTP' : 'SEND OTP'}
+                  </ThemedText>
+
+                  <MaterialCommunityIcons
+                    name="arrow-right"
+                    size={20}
+                    color="#fff"
+                    style={styles.buttonIcon}
+                  />
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <ThemedText style={styles.dividerText}>OR CONTINUE WITH</ThemedText>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Social */}
+            <View style={styles.socialRow}>
+              <TouchableOpacity style={styles.socialButton}>
+                <MaterialCommunityIcons name="apple" size={22} color="#000" />
+                <ThemedText style={styles.socialText}>Apple</ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.socialButton}>
+                <MaterialCommunityIcons name="google" size={22} color="#000" />
+                <ThemedText style={styles.socialText}>Google</ThemedText>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+
+        </View>
+
+        {/* Bottom Section */}
+        <View style={styles.bottomSection}>
+
+          <View style={styles.securityBar}>
+            <MaterialCommunityIcons name="shield-check" size={16} color="#000000" />
+            <ThemedText style={styles.securityTextWhite}>
+              Secure, encrypted login powered by Evaira AI
+            </ThemedText>
+          </View>
+
+          <View style={styles.footerContainer}>
+            <TouchableOpacity>
+              <ThemedText style={styles.footerLink}>Privacy Policy</ThemedText>
+            </TouchableOpacity>
+
+            <ThemedText style={styles.footerDot}>•</ThemedText>
+
+            <TouchableOpacity>
+              <ThemedText style={styles.footerLink}>Terms of Service</ThemedText>
+            </TouchableOpacity>
+
+            <ThemedText style={styles.footerDot}>•</ThemedText>
+
+            <TouchableOpacity>
+              <ThemedText style={styles.footerLink}>Support</ThemedText>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.inputWrapper}>
-            <MaterialCommunityIcons name="lock-outline" size={18} color="#777" />
-
-            <TextInput
-              style={styles.inputField}
-              placeholder="OTP"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              value={otp}
-              onChangeText={setOtp}
-            />
-          </View>
         </View>
-      )}
-
-      {/* Button */}
-      <TouchableOpacity
-        style={[
-          styles.primaryButton,
-          (sending || verifying) && styles.buttonDisabled,
-        ]}
-        onPress={otpSent ? handleContinue : handleSendOtp}
-        disabled={sending || verifying}
-      >
-        {sending || verifying ? (
-          <ActivityIndicator color="#fff" size="small" />
-        ) : (
-          <View style={styles.buttonContent}>
-            <ThemedText style={styles.primaryButtonText}>
-              {otpSent ? 'VERIFY OTP' : 'SEND OTP'}
-            </ThemedText>
-
-            <MaterialCommunityIcons
-              name="arrow-right"
-              size={20}
-              color="#fff"
-              style={styles.buttonIcon}
-            />
-          </View>
-        )}
-      </TouchableOpacity>
-
-      {/* Divider */}
-      <View style={styles.dividerContainer}>
-        <View style={styles.dividerLine} />
-        <ThemedText style={styles.dividerText}>OR CONTINUE WITH</ThemedText>
-        <View style={styles.dividerLine} />
-      </View>
-
-      {/* Social */}
-      <View style={styles.socialRow}>
-        <TouchableOpacity style={styles.socialButton}>
-          <MaterialCommunityIcons name="apple" size={22} color="#000" />
-          <ThemedText style={styles.socialText}>Apple</ThemedText>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.socialButton}>
-          <MaterialCommunityIcons name="google" size={22} color="#000" />
-          <ThemedText style={styles.socialText}>Google</ThemedText>
-        </TouchableOpacity>
-      </View>
-
-    </View>
-
-  </View>
-
-  {/* Bottom Section */}
-  <View style={styles.bottomSection}>
-
-    <View style={styles.securityBar}>
-      <MaterialCommunityIcons name="shield-check" size={16} color="#000000" />
-      <ThemedText style={styles.securityTextWhite}>
-        Secure, encrypted login powered by Evaira AI
-      </ThemedText>
-    </View>
-
-    <View style={styles.footerContainer}>
-      <TouchableOpacity>
-        <ThemedText style={styles.footerLink}>Privacy Policy</ThemedText>
-      </TouchableOpacity>
-
-      <ThemedText style={styles.footerDot}>•</ThemedText>
-
-      <TouchableOpacity>
-        <ThemedText style={styles.footerLink}>Terms of Service</ThemedText>
-      </TouchableOpacity>
-
-      <ThemedText style={styles.footerDot}>•</ThemedText>
-
-      <TouchableOpacity>
-        <ThemedText style={styles.footerLink}>Support</ThemedText>
-      </TouchableOpacity>
-    </View>
-
-    </View>
 
       </ScrollView>
-</ThemedView>
+    </ThemedView>
   );
 }
 
@@ -339,10 +364,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contentWrapper: {
-  paddingHorizontal: 24,
-  paddingTop: 40,
-  alignItems: 'center',
-},
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    alignItems: 'center',
+  },
 
 
   iconContainer: {
@@ -469,14 +494,14 @@ const styles = StyleSheet.create({
   },
   socialButton: {
     flex: 1,
-  height: 46,
-  backgroundColor: '#fff',
-  borderRadius: 10,
-  justifyContent: 'center',
-  alignItems: 'center',
-  flexDirection: 'row',
-  gap: 8,
-  marginHorizontal: 4,
+    height: 46,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginHorizontal: 4,
   },
   socialButtonText: {
     fontSize: 14,
@@ -506,74 +531,74 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   loginCard: {
-  width: '100%',
-  backgroundColor: '#f5f5f5ff',
-  borderRadius: 20,
-  padding: 20,
-  marginTop: 5,
-},
+    width: '100%',
+    backgroundColor: '#f5f5f5ff',
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 5,
+  },
 
-inputWrapper: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: '#ffffffff',
-  borderRadius: 10,
-  paddingHorizontal: 12,
-  height: 48,
-  gap: 8,
-},
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffffff',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 48,
+    gap: 8,
+  },
 
-inputField: {
-  flex: 1,
-  fontSize: 14,
-},
+  inputField: {
+    flex: 1,
+    fontSize: 14,
+  },
 
-otpHeader: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: 8,
-},
+  otpHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
 
-socialRow: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  marginTop: 12,
-},
+  socialRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
 
 
 
-socialText: {
-  fontSize: 13,
-  fontWeight: '500',
-},
+  socialText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
 
-securityBar: {
-  //marginTop: 10,        // pushes it slightly down
-  paddingVertical: 8,
-  paddingHorizontal: 10, // left & right spacing inside box
-  borderRadius: 12,
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  backgroundColor: '#f5f5f5ff', // or your gradient color
-  alignSelf: 'center'
-},
+  securityBar: {
+    //marginTop: 10,        // pushes it slightly down
+    paddingVertical: 8,
+    paddingHorizontal: 10, // left & right spacing inside box
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#f5f5f5ff', // or your gradient color
+    alignSelf: 'center'
+  },
 
-securityTextWhite: {
-  fontSize: 13,
-  color: '#000000ff',
-},
-footerContainer: {
-  flexDirection: 'row',
-  justifyContent: 'center',
-  alignItems: 'center',
-  paddingBottom: 60,
-  gap: 12
-},
-bottomSection: {
-  paddingBottom: 15,
-  alignItems: 'center',
-},
+  securityTextWhite: {
+    fontSize: 13,
+    color: '#000000ff',
+  },
+  footerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 60,
+    gap: 12
+  },
+  bottomSection: {
+    paddingBottom: 15,
+    alignItems: 'center',
+  },
 });
