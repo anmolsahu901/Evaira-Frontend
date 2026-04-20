@@ -4,7 +4,7 @@
     "slug": "evaira",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo2.jpg",
+    "icon": "./assets/images/circle_logo.png",
     "scheme": "evaira",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,28 +13,14 @@
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.evaira"
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/logo2.jpg"
+      "favicon": "./assets/images/circle_logo.png"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ],
-      "expo-secure-store"
-    ],
+    "plugins": ["expo-router", "expo-secure-store"],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
