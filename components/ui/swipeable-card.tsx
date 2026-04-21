@@ -49,7 +49,7 @@ export default function SwipeableCard({ children, onSwipe, nextItem }: Props) {
   const cardScale = isSwiping
     ? translateX.interpolate({
       inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-      outputRange: [0.60, 1, 0.60],
+      outputRange: [0.50, 1, 0.50],
       extrapolate: 'clamp',
     })
     : new Animated.Value(1);
@@ -58,7 +58,7 @@ export default function SwipeableCard({ children, onSwipe, nextItem }: Props) {
   const cardBorderRadius = isSwiping
     ? translateX.interpolate({
       inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-      outputRange: [90, 40, 90],
+      outputRange: [100, 45, 100],
       extrapolate: 'clamp',
     })
     : new Animated.Value(0);
@@ -66,7 +66,7 @@ export default function SwipeableCard({ children, onSwipe, nextItem }: Props) {
   // Card border opacity: white border appears during swipe (using opacity instead of borderWidth)
   const cardBorderOpacity = isSwiping
     ? translateX.interpolate({
-      inputRange: [-SCREEN_WIDTH * 0.9, 0, SCREEN_WIDTH * 0.9],
+      inputRange: [-SCREEN_WIDTH * 0.5, 0, SCREEN_WIDTH * 0.5],
       outputRange: [1, 0, 1],
       extrapolate: 'clamp',
     })
@@ -177,10 +177,10 @@ export default function SwipeableCard({ children, onSwipe, nextItem }: Props) {
           },
         ]}
       >
-        {/* White border overlay */}
-        <Animated.View style={[styles.borderOverlay, { opacity: cardBorderOpacity }]} />
-
         {children}
+
+        {/* White border overlay */}
+        <Animated.View pointerEvents="none" style={[styles.borderOverlay, { opacity: cardBorderOpacity, borderRadius: cardBorderRadius }]} />
 
         <Animated.View pointerEvents="none" style={[styles.badge, styles.likeBadge, { opacity: likeOpacity }]}>
           <Text style={[styles.badgeText, { color: '#00e676' }]}>OPEN</Text>
@@ -206,7 +206,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderWidth: 6,
     borderColor: '#ffffff',
-    borderRadius: 0,
     pointerEvents: 'none',
   },
   nextCard: {

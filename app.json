@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/circle_logo.png",
     "scheme": "evaira",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
