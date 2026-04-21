@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Image, StyleSheet, View, TouchableOpacity, Pressable } from 'react-native';
+import { Image, StyleSheet, View, TouchableOpacity, Pressable, BackHandler, ToastAndroid, Platform, Alert } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import Animated, {
   useAnimatedStyle,
@@ -18,12 +18,36 @@ import { validateToken, prefetchHomeData } from '../lib/api';
 export default function SplashScreen() {
   const router = useRouter();
   const { setAuthToken } = useUserProfile();
+  const backPressCount = useRef(0);
 
-  
   // Animation values
   // const opacity = useSharedValue(0);
   const isInitialLoad = useRef(true);
   const authCheckDone = useRef(false);
+
+  // Handle back press - require double press to exit
+  useEffect(() => {
+    const onBackPress = () => {
+      if (backPressCount.current === 0) {
+        backPressCount.current += 1;
+        if (Platform.OS === 'android') {
+          ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+        } else {
+          Alert.alert('Exit App', 'Press back again to exit', [{ text: 'OK' }]);
+        }
+        setTimeout(() => {
+          backPressCount.current = 0;
+        }, 2000);
+        return true;
+      } else {
+        BackHandler.exitApp();
+        return true;
+      }
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => backHandler.remove();
+  }, []);
 
   // Fade in animation
   const opacity = useSharedValue(1);
@@ -79,19 +103,19 @@ export default function SplashScreen() {
             setAuthToken(token); // [PERSIST_AUTH]
 
             console.log('✅ Token validation successful. Token is valid. Navigating to home.');
-            
+
             // PREFETCH DATA EARLY! Start fetching Home data before navigating
             prefetchHomeData().catch(e => console.log('Prefetch home data failed', e));
-            
+
             router.replace('/home'); // [PERSIST_AUTH]
-          //  router.replace('/login'); // [chang
-          // es for testing ]
+            //  router.replace('/login'); // [chang
+            // es for testing ]
 
           } else {
             // ❌ Token is expired (401) or validation failed - clear it and send to login
             console.warn('❌ Token validation failed. Clearing token and redirecting to login.');
             await SecureStore.deleteItemAsync('authToken');
-           // router.replace('/login'); // [PERSIST_AUTH]
+            // router.replace('/login'); // [PERSIST_AUTH]
           }
         } else { // [PERSIST_AUTH]
           // No token → User needs to login
@@ -103,7 +127,7 @@ export default function SplashScreen() {
       } catch (error) {
         console.error('Error checking persistent auth:', error);
         // On error, default to login screen for safety
-      //  router.replace('/login');
+        //  router.replace('/login');
       }
     };
 
