@@ -179,7 +179,7 @@ export default function Account() {
             <Image source={Images.logo2} style={styles.avatar} />
           </View>
           <ThemedText style={styles.name}>{displayName}</ThemedText>
-          <ThemedText style={styles.subtitle}>Premium Member since Oct 2023</ThemedText>
+          <ThemedText style={styles.subtitle}>Premium Member since April 2026</ThemedText>
           <TouchableOpacity style={styles.editButton}>
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#6b7a99',
+    color: '#0c0c0c',
     marginBottom: 12,
   },
   editButton: {
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sectionLabel: {
-    color: '#576483',
+    color: '#0c0c0c',
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
