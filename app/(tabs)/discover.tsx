@@ -136,13 +136,19 @@ export const FeedView = ({ initialItems, initialIndex, onClose, disableSeenTrack
     }
   };
 
-  const renderItem = ({ item }: { item: HomeProduct }) => (
-    <View style={{ height: containerHeight }}>
-      <SwipeableCard onSwipe={(dir) => handleSwipe(item, dir)}>
-        <ProductCard product={item} onVisibilityChange={handleVisibilityChange} />
-      </SwipeableCard>
-    </View>
-  );
+  const renderItem = ({ item, index }: { item: HomeProduct; index: number }) => {
+    const nextItem = index < products.length - 1 ? products[index + 1] : null;
+    return (
+      <View style={{ height: containerHeight }}>
+        <SwipeableCard
+          onSwipe={(dir) => handleSwipe(item, dir)}
+          nextItem={nextItem ? <ProductCard product={nextItem} onVisibilityChange={handleVisibilityChange} /> : undefined}
+        >
+          <ProductCard product={item} onVisibilityChange={handleVisibilityChange} />
+        </SwipeableCard>
+      </View>
+    );
+  };
 
   const undoSvg = encodeURIComponent(`
     <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='46' height='46'>

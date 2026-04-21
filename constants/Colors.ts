@@ -8,11 +8,11 @@ export const Colors = {
     tabIconSelected: '#007AFF',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
+    text: '#11181C',
+    background: '#fff',
     tint: '#007AFF',
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    icon: '#687076',
+    tabIconDefault: '#687076',
     tabIconSelected: '#007AFF',
   },
 };

@@ -211,13 +211,19 @@ export default function Home() {
     }
   };
 
-  const renderItem = ({ item }: { item: Product }) => (
-    <View style={{ height: containerHeight }}>
-      <SwipeableCard onSwipe={(dir) => handleSwipe(item, dir)}>
-        <ProductCard product={item} onVisibilityChange={handleVisibilityChange} />
-      </SwipeableCard>
-    </View>
-  );
+  const renderItem = ({ item, index }: { item: Product; index: number }) => {
+    const nextItem = index < products.length - 1 ? products[index + 1] : null;
+    return (
+      <View style={{ height: containerHeight }}>
+        <SwipeableCard
+          onSwipe={(dir) => handleSwipe(item, dir)}
+          nextItem={nextItem ? <ProductCard product={nextItem} onVisibilityChange={handleVisibilityChange} /> : undefined}
+        >
+          <ProductCard product={item} onVisibilityChange={handleVisibilityChange} />
+        </SwipeableCard>
+      </View>
+    );
+  };
 
   const onLayout = (event: LayoutChangeEvent) => {
     setContainerHeight(event.nativeEvent.layout.height);
