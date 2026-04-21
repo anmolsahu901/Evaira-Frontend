@@ -18,7 +18,7 @@ import { validateToken, prefetchHomeData } from '../lib/api';
 export default function SplashScreen() {
   const router = useRouter();
   const { setAuthToken } = useUserProfile();
-  const backPressCount = useRef(0);
+  // const backPressCount = useRef(0);
 
   // Animation values
   // const opacity = useSharedValue(0);
@@ -26,28 +26,28 @@ export default function SplashScreen() {
   const authCheckDone = useRef(false);
 
   // Handle back press - require double press to exit
-  useEffect(() => {
-    const onBackPress = () => {
-      if (backPressCount.current === 0) {
-        backPressCount.current += 1;
-        if (Platform.OS === 'android') {
-          ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
-        } else {
-          Alert.alert('Exit App', 'Press back again to exit', [{ text: 'OK' }]);
-        }
-        setTimeout(() => {
-          backPressCount.current = 0;
-        }, 2000);
-        return true;
-      } else {
-        BackHandler.exitApp();
-        return true;
-      }
-    };
+  // useEffect(() => {
+  //   const onBackPress = () => {
+  //     if (backPressCount.current === 0) {
+  //       backPressCount.current += 1;
+  //       if (Platform.OS === 'android') {
+  //         ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+  //       } else {
+  //         Alert.alert('Exit App', 'Press back again to exit', [{ text: 'OK' }]);
+  //       }
+  //       setTimeout(() => {
+  //         backPressCount.current = 0;
+  //       }, 2000);
+  //       return true;
+  //     } else {
+  //       BackHandler.exitApp();
+  //       return true;
+  //     }
+  //   };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-    return () => backHandler.remove();
-  }, []);
+  //   const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+  //   return () => backHandler.remove();
+  // }, []);
 
   // Fade in animation
   const opacity = useSharedValue(1);
