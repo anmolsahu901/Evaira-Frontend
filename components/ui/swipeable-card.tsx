@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Animated, PanResponder, Dimensions, StyleSheet, View, Text } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -10,11 +10,13 @@ const SWIPE_VELOCITY_THRESHOLD = 0.6; // velocity threshold to trigger swipe
 interface Props {
   children: React.ReactNode;
   onSwipe: (direction: 'left' | 'right') => void;
+  nextItem?: React.ReactNode; // The next card to show behind during swipe
 }
 
-export default function SwipeableCard({ children, onSwipe }: Props) {
+export default function SwipeableCard({ children, onSwipe, nextItem }: Props) {
   const translateX = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(0)).current;
+  const [isSwiping, setIsSwiping] = useState(false);
 
   const rotate = translateX.interpolate({
     inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
@@ -34,6 +36,42 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
     extrapolate: 'clamp',
   });
 
+  // Next card opacity: 0 when not swiping, fades in during swipe, full opacity when swipe completes
+  const nextCardOpacity = isSwiping
+    ? translateX.interpolate({
+      inputRange: [-SCREEN_WIDTH, -SCREEN_WIDTH * 0.5, 0, SCREEN_WIDTH * 0.5, SCREEN_WIDTH],
+      outputRange: [1, 0.6, 0, 0.6, 1],
+      extrapolate: 'clamp',
+    })
+    : new Animated.Value(0);
+
+  // Card scale: becomes smaller during swipe (0.95 at edges, 1 at center)
+  const cardScale = isSwiping
+    ? translateX.interpolate({
+      inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
+      outputRange: [0.50, 1, 0.50],
+      extrapolate: 'clamp',
+    })
+    : new Animated.Value(1);
+
+  // Card border radius: becomes more rounded during swipe
+  const cardBorderRadius = isSwiping
+    ? translateX.interpolate({
+      inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
+      outputRange: [100, 45, 100],
+      extrapolate: 'clamp',
+    })
+    : new Animated.Value(0);
+
+  // Card border opacity: white border appears during swipe (using opacity instead of borderWidth)
+  const cardBorderOpacity = isSwiping
+    ? translateX.interpolate({
+      inputRange: [-SCREEN_WIDTH * 0.5, 0, SCREEN_WIDTH * 0.5],
+      outputRange: [1, 0, 1],
+      extrapolate: 'clamp',
+    })
+    : new Animated.Value(0);
+
   const panResponder = useRef(
     PanResponder.create({
       // Don't claim the responder immediately on touch start; wait until movement clearly indicates a horizontal swipe.
@@ -49,6 +87,7 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
         // Stop any running animations when gesture begins
         translateX.stopAnimation();
         translateY.stopAnimation();
+        setIsSwiping(true);
       },
       onPanResponderMove: (_evt, gestureState) => {
         translateX.setValue(gestureState.dx);
@@ -58,6 +97,7 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
       onPanResponderTerminationRequest: () => true,
       onPanResponderTerminate: () => {
         // If the responder is taken by a parent, reset position
+        setIsSwiping(false);
         Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
         Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
       },
@@ -80,7 +120,10 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
               speed: 20,
               bounciness: 0,
             }),
-          ]).start(() => onSwipe('right'));
+          ]).start(() => {
+            setIsSwiping(false);
+            onSwipe('right');
+          });
         } else if (dx < -threshold || vx < -SWIPE_VELOCITY_THRESHOLD) {
           // swiped left
           Animated.parallel([
@@ -96,10 +139,14 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
               speed: 20,
               bounciness: 0,
             }),
-          ]).start(() => onSwipe('left'));
+          ]).start(() => {
+            setIsSwiping(false);
+            onSwipe('left');
+          });
         } else {
           Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
           Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
+          setIsSwiping(false);
         }
       },
     })
@@ -107,6 +154,14 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
 
   return (
     <View style={styles.wrapper}>
+      {/* Next card (behind) - fades in during swipe */}
+      {nextItem && (
+        <Animated.View style={[styles.nextCard, { opacity: nextCardOpacity }]}>
+          {nextItem}
+        </Animated.View>
+      )}
+
+      {/* Current card (front) */}
       <Animated.View
         {...panResponder.panHandlers}
         style={[
@@ -116,17 +171,22 @@ export default function SwipeableCard({ children, onSwipe }: Props) {
               { translateX: translateX },
               { translateY: translateY },
               { rotate },
+              { scale: cardScale },
             ],
+            borderRadius: cardBorderRadius,
           },
         ]}
       >
         {children}
 
-        <Animated.View pointerEvents="none" style={[styles.badge, styles.likeBadge, { opacity: likeOpacity }]}> 
+        {/* White border overlay */}
+        <Animated.View pointerEvents="none" style={[styles.borderOverlay, { opacity: cardBorderOpacity, borderRadius: cardBorderRadius }]} />
+
+        <Animated.View pointerEvents="none" style={[styles.badge, styles.likeBadge, { opacity: likeOpacity }]}>
           <Text style={[styles.badgeText, { color: '#00e676' }]}>OPEN</Text>
         </Animated.View>
 
-        <Animated.View pointerEvents="none" style={[styles.badge, styles.nopeBadge, { opacity: nopeOpacity }]}> 
+        <Animated.View pointerEvents="none" style={[styles.badge, styles.nopeBadge, { opacity: nopeOpacity }]}>
           <Text style={[styles.badgeText, { color: '#ff1744' }]}>DISLIKE</Text>
         </Animated.View>
       </Animated.View>
@@ -140,6 +200,17 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
+    overflow: 'hidden',
+  },
+  borderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 6,
+    borderColor: '#ffffff',
+    pointerEvents: 'none',
+  },
+  nextCard: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: -1,
   },
   badge: {
     position: 'absolute',

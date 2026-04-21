@@ -133,7 +133,13 @@ export default function Account() {
               // Reset user profile context
               resetProfile();
               console.log('✅ User logged out successfully');
-              // Redirect to login screen
+              
+              // Clear the navigation stack so back button works correctly on splash screen
+              if (router.canDismiss()) {
+                router.dismissAll();
+              }
+              
+              // Redirect to splash screen
               router.replace('/splash');
             } catch (error) {
               console.error('Error during logout:', error);
@@ -242,7 +248,7 @@ export default function Account() {
         </View>
 
         <TouchableOpacity style={styles.logout} onPress={() => handlePress({ key: 'logout', label: 'Log out', icon: 'power-outline' })}>
-          <Text style={styles.logoutText}>Sign Out</Text>
+          <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
     </ThemedView>
