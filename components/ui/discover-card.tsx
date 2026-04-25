@@ -53,13 +53,13 @@ export default function DiscoverCard({
         </View>
       ) : null}
 
-      <TouchableOpacity activeOpacity={0.8} style={styles.heart} onPress={toggleLike}>
+      {/* <TouchableOpacity activeOpacity={0.8} style={styles.heart} onPress={toggleLike}>
         <Ionicons name={liked ? 'heart' : 'heart-outline'} size={18} color={liked ? '#ff6b78' : '#fff'} />
       </TouchableOpacity>
 
       <TouchableOpacity activeOpacity={0.8} style={styles.bookmark} onPress={onSave}>
         <Ionicons name="bookmark-outline" size={18} color="#fff" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       <View style={styles.infoBox}>
         {brand ? <Text style={styles.brand}>{brand}</Text> : null}

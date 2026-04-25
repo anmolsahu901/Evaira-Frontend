@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import * as WebBrowser from 'expo-web-browser';
 import {
   Text,
   View,
@@ -231,6 +232,27 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
       Alert.alert('Info', 'Product details are not available.');
     }
   };
+
+  const handleViewDetails2 = async () => {
+  try {
+    const res = await openProduct(Number(product.id));
+    if (!res.ok) console.warn('Failed to track OPEN action on backend');
+  } catch (e) {
+    console.error('OPEN tracking failed', e);
+  }
+
+  if (product.deeplinkUrl) {
+    try {
+      await WebBrowser.openBrowserAsync(product.deeplinkUrl);
+      console.log('Opened in browser:', product.deeplinkUrl);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open product details.');
+      console.error('Error opening link:', error);
+    }
+  } else {
+    Alert.alert('Info', 'Product details are not available.');
+  }
+};
 
   return (
     <View style={styles.cardContainer}>
