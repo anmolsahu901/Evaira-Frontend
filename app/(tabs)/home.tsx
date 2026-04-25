@@ -145,37 +145,24 @@ export default function Home() {
     undoTimerRef.current = setTimeout(() => {
       setSwipedStack([]);
       undoTimerRef.current = null;
-    }, 5000) as unknown as number;
+    }, 2000) as unknown as number;
   };
 
   const handleSwipe = async (product: Product, direction: 'left' | 'right') => {
-    // push to undo stack
-    setSwipedStack(prev => [{ product, direction }, ...prev]);
+    // push to undo stack only for dislike (swipe left)
+    if (direction === 'left') {
+      setSwipedStack(prev => [{ product, direction }, ...prev]);
+    }
 
     // remove swiped product from the deck
     setProducts(prev => prev.filter(p => p.id !== product.id));
 
     if (direction === 'right') {
       try {
-        const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'OPEN' });
+        const res = await sendLikeNotification({ productId: Number(product.id), actionType: 'LIKE' });
         if (!res.ok) throw new Error('network');
       } catch (e) {
-        console.warn('OPEN API failed', e);
-      }
-
-      // 🔗 Open deeplink if available
-      if (product.deeplinkUrl) {
-        try {
-          const canOpen = await Linking.canOpenURL(product.deeplinkUrl);
-          if (canOpen) {
-            await Linking.openURL(product.deeplinkUrl);
-            console.log('Deeplink opened:', product.deeplinkUrl);
-          } else {
-            console.warn('Cannot open deeplink:', product.deeplinkUrl);
-          }
-        } catch (error) {
-          console.error('Error opening deeplink:', error);
-        }
+        console.warn('LIKE API failed', e);
       }
     }
     else {
@@ -291,12 +278,12 @@ export default function Home() {
           style={[styles.headerIcons, { opacity: headerOpacity }]}
           pointerEvents={headerVisible ? 'auto' : 'none'}
         >
-          <TouchableOpacity style={styles.headerIcon}>
+          {/* <TouchableOpacity style={styles.headerIcon}>
             <Ionicons name="search" size={24} color="white" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerIcon}>
             <Ionicons name="cart" size={24} color="white" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </Animated.View>
       </View>
 
@@ -363,23 +350,25 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 100,
+    top: 250, // Increased top to bring it down
     alignItems: 'center',
     zIndex: 10,
     paddingTop: 6,
   },
   undoButton: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 28,
+    backgroundColor: 'rgba(20, 30, 50, 0.51)', // Darker, sleeker background
+    paddingHorizontal: 20,
+    paddingVertical: 10, // Modify this to change height
+    borderRadius: 30,
     alignItems: 'center',
-    minWidth: 140,
+    minWidth: 160,
+    borderWidth: 1,
+    borderColor: 'rgba(116, 104, 104, 0.15)', // Subtle glass border
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 8,
     flexDirection: 'row',
     gap: 10,
   },
@@ -396,7 +385,7 @@ const styles = StyleSheet.create({
   },
   undoSubText: {
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
+    fontSize: 15,
     marginTop: 2,
     marginLeft: 6,
   },

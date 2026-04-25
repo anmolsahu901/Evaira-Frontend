@@ -183,7 +183,7 @@ export default function SwipeableCard({ children, onSwipe, nextItem }: Props) {
         <Animated.View pointerEvents="none" style={[styles.borderOverlay, { opacity: cardBorderOpacity, borderRadius: cardBorderRadius }]} />
 
         <Animated.View pointerEvents="none" style={[styles.badge, styles.likeBadge, { opacity: likeOpacity }]}>
-          <Text style={[styles.badgeText, { color: '#00e676' }]}>OPEN</Text>
+          <Text style={[styles.badgeText, { color: '#00e676' }]}>LIKE</Text>
         </Animated.View>
 
         <Animated.View pointerEvents="none" style={[styles.badge, styles.nopeBadge, { opacity: nopeOpacity }]}>

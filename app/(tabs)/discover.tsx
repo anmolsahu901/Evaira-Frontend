@@ -95,23 +95,19 @@ export const FeedView = ({ initialItems, initialIndex, onClose, disableSeenTrack
     undoTimerRef.current = setTimeout(() => {
       setSwipedStack([]);
       undoTimerRef.current = null;
-    }, 5000) as unknown as number;
+    }, 2000) as unknown as number;
   };
 
   const handleSwipe = async (product: HomeProduct, direction: 'left' | 'right') => {
-    setSwipedStack(prev => [{ product, direction }, ...prev]);
+    if (direction === 'left') {
+      setSwipedStack(prev => [{ product, direction }, ...prev]);
+    }
     setProducts(prev => prev.filter(p => p.id !== product.id));
 
     if (direction === 'right') {
       try {
-        await sendLikeNotification({ productId: Number(product.id) || product.id, actionType: 'OPEN' });
+        await sendLikeNotification({ productId: Number(product.id) || product.id, actionType: 'LIKE' });
       } catch (e) { }
-      if (product.deeplinkUrl) {
-        try {
-          const canOpen = await Linking.canOpenURL(product.deeplinkUrl);
-          if (canOpen) await Linking.openURL(product.deeplinkUrl);
-        } catch (error) { }
-      }
     } else {
       try { await dislikeProduct(Number(product.id) || product.id); } catch (e) { }
     }
@@ -679,8 +675,8 @@ const styles = StyleSheet.create({
   feedContainer: { flex: 1, backgroundColor: '#000' },
   flatListContainer: { flex: 1 },
   headerIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255, 255, 255, 0.1)', justifyContent: 'center', alignItems: 'center' },
-  undoContainer: { position: 'absolute', left: 0, right: 0, top: 100, alignItems: 'center', zIndex: 10, paddingTop: 6 },
-  undoButton: { backgroundColor: 'rgba(255,255,255,0.06)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 28, alignItems: 'center', minWidth: 140, flexDirection: 'row' },
+  undoContainer: { position: 'absolute', left: 0, right: 0, top: 130, alignItems: 'center', zIndex: 10, paddingTop: 6 },
+  undoButton: { backgroundColor: 'rgba(20, 30, 50, 0.9)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 30, alignItems: 'center', minWidth: 160, flexDirection: 'row', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.15)', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 8, elevation: 8, gap: 10 },
   undoImage: { width: 38, height: 38, tintColor: 'white', marginRight: 8 },
   undoSubText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2, marginLeft: 6 },
   headerContainer: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 40, paddingBottom: 12, backgroundColor: 'transparent', zIndex: 5 },
