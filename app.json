@@ -5,6 +5,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/circle_logo.png",
+    "splash": {
+      "image": "./assets/circle_icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "scheme": "evaira",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,

@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import { useState, useRef, useEffect } from 'react';
-import { ActivityIndicator, Image, StyleSheet, TextInput, TouchableOpacity, View, ScrollView, BackHandler, ToastAndroid, Platform, Alert } from 'react-native';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { ActivityIndicator, Image, StyleSheet, TextInput, TouchableOpacity, View, ScrollView, BackHandler, ToastAndroid, Platform, Alert, KeyboardAvoidingView } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
@@ -24,28 +25,30 @@ export default function LoginScreen() {
   const backPressCount = useRef(0);
 
   // Handle back press - require double press to exit
-  useEffect(() => {
-    const onBackPress = () => {
-      if (backPressCount.current === 0) {
-        backPressCount.current += 1;
-        if (Platform.OS === 'android') {
-          ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (backPressCount.current === 0) {
+          backPressCount.current += 1;
+          if (Platform.OS === 'android') {
+            ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+          } else {
+            Alert.alert('Exit App', 'Press back again to exit', [{ text: 'OK' }]);
+          }
+          setTimeout(() => {
+            backPressCount.current = 0;
+          }, 2000);
+          return true;
         } else {
-          Alert.alert('Exit App', 'Press back again to exit', [{ text: 'OK' }]);
+          BackHandler.exitApp();
+          return true;
         }
-        setTimeout(() => {
-          backPressCount.current = 0;
-        }, 2000);
-        return true;
-      } else {
-        BackHandler.exitApp();
-        return true;
-      }
-    };
+      };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-    return () => backHandler.remove();
-  }, []);
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => backHandler.remove();
+    }, [])
+  );
 
   const handleSendOtp = async () => {
     if (!email.trim()) {
@@ -175,7 +178,12 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }} bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior="padding"
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }} bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {/* Main Content */}
         <View style={styles.contentWrapper}>
@@ -320,6 +328,7 @@ export default function LoginScreen() {
 
         {/* Bottom Section */}
         <View style={styles.bottomSection}>
+        
 
           <View style={styles.securityBar}>
             <MaterialCommunityIcons name="shield-check" size={16} color="#000000" />
@@ -349,6 +358,7 @@ export default function LoginScreen() {
         </View>
 
       </ScrollView>
+      </KeyboardAvoidingView>
     </ThemedView>
   );
 }
