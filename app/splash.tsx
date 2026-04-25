@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
-import { Image, StyleSheet, View, TouchableOpacity, Pressable, BackHandler, ToastAndroid, Platform, Alert } from 'react-native';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { Image, StyleSheet, View, TouchableOpacity, Pressable, BackHandler, ToastAndroid, Platform, Alert, ActivityIndicator } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -24,30 +25,33 @@ export default function SplashScreen() {
   // const opacity = useSharedValue(0);
   const isInitialLoad = useRef(true);
   const authCheckDone = useRef(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   // Handle back press - require double press to exit
-  useEffect(() => {
-    const onBackPress = () => {
-      if (backPressCount.current === 0) {
-        backPressCount.current += 1;
-        if (Platform.OS === 'android') {
-          ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        if (backPressCount.current === 0) {
+          backPressCount.current += 1;
+          if (Platform.OS === 'android') {
+            ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+          } else {
+            Alert.alert('Exit App', 'Press back again to exit', [{ text: 'OK' }]);
+          }
+          setTimeout(() => {
+            backPressCount.current = 0;
+          }, 2000);
+          return true;
         } else {
-          Alert.alert('Exit App', 'Press back again to exit', [{ text: 'OK' }]);
+          BackHandler.exitApp();
+          return true;
         }
-        setTimeout(() => {
-          backPressCount.current = 0;
-        }, 2000);
-        return true;
-      } else {
-        BackHandler.exitApp();
-        return true;
-      }
-    };
+      };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-    return () => backHandler.remove();
-  }, []);
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => backHandler.remove();
+    }, [])
+  );
 
   // Fade in animation
   const opacity = useSharedValue(1);
@@ -64,20 +68,18 @@ export default function SplashScreen() {
     opacity.value = withDelay(
       1000,
       withTiming(1, {
-        duration: 1000,
+        duration: 2000,
         easing: Easing.out(Easing.ease),
       })
     );
   }, []);
 
-  const handleGetStarted = () => {
-    // router.push('/login');
+  // const handleGetStarted = () => {
+  //   // router.push('/login');
 
-    router.push('/login'); // Temporary: auto-navigate to login for development/testing. Remove this line to enable splash screen and auth check.
+  //   router.push('/login'); // Temporary: auto-navigate to login for development/testing. Remove this line to enable splash screen and auth check.
 
-
-
-  };
+  // };
 
 
   useEffect(() => {
@@ -107,27 +109,27 @@ export default function SplashScreen() {
             // PREFETCH DATA EARLY! Start fetching Home data before navigating
             prefetchHomeData().catch(e => console.log('Prefetch home data failed', e));
 
-            router.replace('/home'); // [PERSIST_AUTH]
-            //  router.replace('/login'); // [chang
-            // es for testing ]
+            router.replace('/(tabs)/home');
 
           } else {
             // ❌ Token is expired (401) or validation failed - clear it and send to login
             console.warn('❌ Token validation failed. Clearing token and redirecting to login.');
             await SecureStore.deleteItemAsync('authToken');
-            // router.replace('/login'); // [PERSIST_AUTH]
+            router.replace('/login');
           }
         } else { // [PERSIST_AUTH]
           // No token → User needs to login
           console.log('No token found. Redirecting to login.');
-          // router.replace('/login'); // [PERSIST_AUTH]
+          router.replace('/login');
         } // [PERSIST_AUTH]
 
         // ===== PERSISTENT AUTH CHECK - END =====
       } catch (error) {
         console.error('Error checking persistent auth:', error);
         // On error, default to login screen for safety
-        //  router.replace('/login');
+        router.replace('/login');
+      } finally {
+        setIsCheckingAuth(false);
       }
     };
 
@@ -163,7 +165,17 @@ export default function SplashScreen() {
 
         {/* Divider line */}
         <View style={styles.divider} />
+
+        {/* Auth Check Loader */}
+        <View style={{ height: 0, alignItems: 'center', overflow: 'visible' }}>
+          {isCheckingAuth && (
+            <ActivityIndicator size="large" color="#1a1f26" style={{ marginTop: 40 }} />
+          )}
+        </View>
       </View>
+
+
+
 
       {/* Bottom section */}
       <View style={styles.bottomSection}>
@@ -171,7 +183,7 @@ export default function SplashScreen() {
         <ThemedText style={styles.aiText}>AI Powered Personal Styling</ThemedText>
 
         {/* Get Started Button */}
-        <Pressable
+        {/* <Pressable
           style={({ pressed }) => [
             styles.button,
             pressed && styles.buttonPressed
@@ -180,7 +192,7 @@ export default function SplashScreen() {
         >
           <ThemedText style={styles.buttonText}>Get Started</ThemedText>
           <ThemedText style={styles.buttonArrow}> ›</ThemedText>
-        </Pressable>
+        </Pressable> */}
 
         {/* Premium Fashion label */}
         <ThemedText style={styles.premiumLabel}>⬥ PREMIUM FASHION ⬥</ThemedText>
@@ -244,6 +256,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 1,
     backgroundColor: '#d0d0d0',
+    
   },
   bottomSection: {
     width: '100%',
