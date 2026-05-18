@@ -39,11 +39,12 @@ interface ProductCardProps {
   onSave?: (productId: string | number, isSaved: boolean) => void;
   onLike?: (productId: string | number, isLiked: boolean) => void;
   onVisibilityChange?: (visible: boolean) => void;
+  onViewDetails?: () => void;
 }
 
 
 
-export default function ProductCard({ product, onSave, onLike, onVisibilityChange }: ProductCardProps) {
+export default function ProductCard({ product, onSave, onLike, onVisibilityChange, onViewDetails }: ProductCardProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(product.likes);
   const [saved, setSaved] = useState(false);
@@ -207,6 +208,7 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
   };
 
   const handleViewDetails = async () => {
+    onViewDetails?.();
     try {
       const res = await openProduct(Number(product.id));
       if (!res.ok) console.warn('Failed to track OPEN action on backend');
