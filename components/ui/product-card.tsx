@@ -97,7 +97,7 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
     const nextValue = contentVisible ? 0 : 1;
     Animated.timing(overlayOpacity, {
       toValue: nextValue,
-      duration: 260,
+      duration: 400,
       useNativeDriver: false,
     }).start();
     setContentVisible(!contentVisible);
@@ -344,6 +344,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#000',
+    borderRadius: 53,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.51)',
+    overflow: 'hidden',
   },
   container: {
     flex: 1,

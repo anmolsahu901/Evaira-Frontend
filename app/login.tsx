@@ -134,6 +134,7 @@ export default function LoginScreen() {
         try {
           if (token && typeof SecureStore?.setItemAsync === 'function') {
             await SecureStore.setItemAsync('authToken', String(token));
+            await SecureStore.deleteItemAsync('hasSeenOnboarding');
           }
           // Also store token in context so downstream screens can use it
           if (token) setAuthToken(String(token));

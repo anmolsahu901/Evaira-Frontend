@@ -2,8 +2,10 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { View, StyleSheet, StatusBar, FlatList, LayoutChangeEvent, Alert, Text, TouchableOpacity, Image, Linking, Animated, BackHandler, ToastAndroid, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
 import ProductCard, { Product } from '../../components/ui/product-card';
 import SwipeableCard from '../../components/ui/swipeable-card';
+import OnboardingGuide from '../../components/ui/OnboardingGuide';
 import { sendLikeNotification, getProducts, dislikeProduct, prefetchDiscoverData, trackProductSeen } from '../../lib/api';
 import { useWishlist } from '../../context/WishlistContext';
 
@@ -49,6 +51,10 @@ export default function Home() {
   const [containerHeight, setContainerHeight] = useState(0);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Onboarding state
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3>(1);
   const [swipedStack, setSwipedStack] = useState<Array<{ product: Product; direction: 'left' | 'right' }>>([]);
   const undoTimerRef = useRef<number | null>(null);
   const [headerOpacity] = useState(() => new Animated.Value(1));
@@ -130,6 +136,18 @@ export default function Home() {
     // Prefetch discover data when home screen opens
     prefetchDiscoverData().catch(e => console.log('Prefetch explore failed', e));
 
+    const checkOnboarding = async () => {
+      try {
+        const hasSeen = await SecureStore.getItemAsync('hasSeenOnboarding');
+        if (hasSeen !== 'true') {
+          setShowOnboarding(true);
+        }
+      } catch (e) {
+        console.log('Error reading onboarding status', e);
+      }
+    };
+    checkOnboarding();
+
     return () => {
       if (undoTimerRef.current) {
         clearTimeout(undoTimerRef.current);
@@ -137,6 +155,13 @@ export default function Home() {
       }
     };
   }, []);
+
+  const finishOnboarding = async () => {
+    try {
+      await SecureStore.setItemAsync('hasSeenOnboarding', 'true');
+    } catch (e) {}
+    setShowOnboarding(false);
+  };
 
   const scheduleClearUndo = () => {
     if (undoTimerRef.current) {
@@ -149,6 +174,10 @@ export default function Home() {
   };
 
   const handleSwipe = async (product: Product, direction: 'left' | 'right') => {
+    if (showOnboarding && onboardingStep === 2) {
+      setOnboardingStep(3);
+    }
+
     // push to undo stack only for dislike (swipe left)
     if (direction === 'left') {
       setSwipedStack(prev => [{ product, direction }, ...prev]);
@@ -200,13 +229,18 @@ export default function Home() {
 
   const renderItem = ({ item, index }: { item: Product; index: number }) => {
     const nextItem = index < products.length - 1 ? products[index + 1] : null;
+    const handleViewDetails = () => {
+      if (showOnboarding && onboardingStep === 3) {
+        finishOnboarding();
+      }
+    };
     return (
       <View style={{ height: containerHeight }}>
         <SwipeableCard
           onSwipe={(dir) => handleSwipe(item, dir)}
-          nextItem={nextItem ? <ProductCard product={nextItem} onVisibilityChange={handleVisibilityChange} /> : undefined}
+          nextItem={nextItem ? <ProductCard product={nextItem} onVisibilityChange={handleVisibilityChange} onViewDetails={handleViewDetails} /> : undefined}
         >
-          <ProductCard product={item} onVisibilityChange={handleVisibilityChange} />
+          <ProductCard product={item} onVisibilityChange={handleVisibilityChange} onViewDetails={handleViewDetails} />
         </SwipeableCard>
       </View>
     );
@@ -256,6 +290,11 @@ export default function Home() {
                 )}
               </View>
             )}
+            onScrollBeginDrag={() => {
+              if (showOnboarding && onboardingStep === 1) {
+                setOnboardingStep(2);
+              }
+            }}
             viewabilityConfig={viewabilityConfig.current}
             onViewableItemsChanged={onViewableItemsChanged}
             getItemLayout={(_data, index) => ({
@@ -286,6 +325,13 @@ export default function Home() {
           </TouchableOpacity> */}
         </Animated.View>
       </View>
+
+      {showOnboarding && (
+        <OnboardingGuide 
+          step={onboardingStep} 
+          onSkip={finishOnboarding} 
+        />
+      )}
 
       {swipedStack.length > 0 && (
         <View style={styles.undoContainer} pointerEvents="box-none">
