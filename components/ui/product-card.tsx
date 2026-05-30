@@ -39,11 +39,12 @@ interface ProductCardProps {
   onSave?: (productId: string | number, isSaved: boolean) => void;
   onLike?: (productId: string | number, isLiked: boolean) => void;
   onVisibilityChange?: (visible: boolean) => void;
+  onViewDetails?: () => void;
 }
 
 
 
-export default function ProductCard({ product, onSave, onLike, onVisibilityChange }: ProductCardProps) {
+export default function ProductCard({ product, onSave, onLike, onVisibilityChange, onViewDetails }: ProductCardProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(product.likes);
   const [saved, setSaved] = useState(false);
@@ -96,7 +97,7 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
     const nextValue = contentVisible ? 0 : 1;
     Animated.timing(overlayOpacity, {
       toValue: nextValue,
-      duration: 260,
+      duration: 400,
       useNativeDriver: false,
     }).start();
     setContentVisible(!contentVisible);
@@ -207,6 +208,7 @@ export default function ProductCard({ product, onSave, onLike, onVisibilityChang
   };
 
   const handleViewDetails = async () => {
+    onViewDetails?.();
     try {
       const res = await openProduct(Number(product.id));
       if (!res.ok) console.warn('Failed to track OPEN action on backend');
@@ -342,6 +344,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#000',
+    borderRadius: 53,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.51)',
+    overflow: 'hidden',
   },
   container: {
     flex: 1,

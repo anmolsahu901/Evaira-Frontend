@@ -13,16 +13,16 @@ export type ApiResult = {
   data?: any;
 };
 
-const SEND_OTP_URL = 'https://evaira-backend.onrender.com/api/auth/send-otp';
-const VERIFY_OTP_URL = 'https://evaira-backend.onrender.com/api/auth/verify-otp';
-const PROFILE_CREATE_URL = 'https://evaira-backend.onrender.com/api/profile/create';
-const GET_PRODUCTS_URL = 'https://evaira-backend.onrender.com/api/user/products/getHomeFeedProducts';
-const ACTIONS_URL = 'https://evaira-backend.onrender.com/api/actions'; // Like/Unlike endpoint
-const ACTIONS_BULK_URL = 'https://evaira-backend.onrender.com/api/actions/bulk/seen'; // Bulk actions endpoint
-const WISHLIST_URL = 'https://evaira-backend.onrender.com/api/user/products/getWishlistData';
-const RECENT_PRODUCTS_URL = 'https://evaira-backend.onrender.com/api/user/products/getProductBasedOnAction';
-const VALIDATE_TOKEN_URL = 'https://evaira-backend.onrender.com/api/profile/tokenValidation';
-const DISCOVER_URL = 'https://evaira-backend.onrender.com/api/discover/getData';
+const SEND_OTP_URL = 'http://192.168.1.5:8080/api/auth/send-otp';
+const VERIFY_OTP_URL = 'http://192.168.1.5:8080/api/auth/verify-otp';
+const PROFILE_CREATE_URL = 'http://192.168.1.5:8080/api/profile/create';
+const GET_PRODUCTS_URL = 'http://192.168.1.5:8080/api/user/products/getHomeFeedProducts';
+const ACTIONS_URL = 'http://192.168.1.5:8080/api/actions'; // Like/Unlike endpoint
+const ACTIONS_BULK_URL = 'http://192.168.1.5:8080/api/actions/bulk/seen'; // Bulk actions endpoint
+const WISHLIST_URL = 'http://192.168.1.5:8080/api/user/products/getWishlistData';
+const RECENT_PRODUCTS_URL = 'http://192.168.1.5:8080/api/user/products/getProductBasedOnAction';
+const VALIDATE_TOKEN_URL = 'http://192.168.1.5:8080/api/profile/tokenValidation';
+const DISCOVER_URL = 'http://192.168.1.5:8080/api/discover/getData';
 // Development mock toggle:
 // - By default, mocks are enabled in dev (__DEV__)
 // - Set `global.__FORCE_API_CALL__ = true` (in dev console or at app startup) to force real network requests
@@ -58,7 +58,7 @@ export async function authenticatedFetch(
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers,
-      'Authorization': token, // Add token to every authenticated request
+      'Authorization': token.startsWith('Bearer ') ? token : `Bearer ${token}`, // Add token to every authenticated request
     };
 
     const response = await fetch(url, {
@@ -68,12 +68,12 @@ export async function authenticatedFetch(
 
     // ✅ Handle 401: Token expired or user deleted
     if (response.status === 401) {
-      console.error('❌ Unauthorized (401) - Token expired or user deleted');
+      console.warn('⚠️ Unauthorized (401) - Token expired or user deleted');
       // Clear stored token
       try {
         await SecureStore.deleteItemAsync('authToken');
       } catch (e) {
-        console.error('Error clearing token:', e);
+        console.warn('Error clearing token:', e);
       }
       return { ok: false, status: 401, data: { error: 'Unauthorized - please login again' } };
     }
@@ -426,4 +426,11 @@ export async function getDiscoverData(forceRefresh = false): Promise<ApiResult> 
   if (discoverPromise) return discoverPromise;
   
   return prefetchDiscoverData();
+}
+
+// ✅ NEW: Delete User Account
+export async function deleteUserAccount(): Promise<ApiResult> {
+  return authenticatedFetch('http://192.168.1.5:8080/api/profile/delete', {
+    method: 'DELETE',
+  });
 }

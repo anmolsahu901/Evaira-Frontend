@@ -45,6 +45,7 @@ function SectionItem({ item, onPress, colors }: { item: SectionLink; onPress: (i
 import { useUserProfile } from '../../context/UserProfileContext';
 import * as SecureStore from 'expo-secure-store';
 import { fetchUserProfile } from '../../lib/profileAPI';
+import { deleteUserAccount } from '../../lib/api';
 
 const personalActivity: SectionLink[] = [
   { key: 'wishlist', label: 'Wishlist & Curated', subLabel: 'products you saved', icon: 'heart-outline', route: '/wishlist' },
@@ -61,11 +62,12 @@ const supportLinks: SectionLink[] = [
 const systemLinks: SectionLink[] = [
   { key: 'notifications', label: 'Notifications', icon: 'notifications-outline' },
   { key: 'privacy', label: 'Privacy & Security', icon: 'shield-checkmark-outline' },
+  { key: 'delete', label: 'Delete Account', icon: 'trash-outline' },
 ];
 
 export default function Account() {
   const router = useRouter();
-  const { name, age, resetProfile } = useUserProfile();
+  const { name, age, logout } = useUserProfile();
   const [profileData, setProfileData] = useState<any>(null);
 
   useEffect(() => {
@@ -115,6 +117,7 @@ export default function Account() {
 
 
   const handlePress = (item: SectionLink) => {
+    console.log('User clicked Log out button')
     if (item.route) {
       router.push(item.route as any);
       return;
@@ -128,11 +131,8 @@ export default function Account() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Clear token from secure storage
-              await SecureStore.deleteItemAsync('authToken');
-              // Reset user profile context
-              resetProfile();
-              console.log('✅ User logged out successfully');
+              // Call the centralized secure logout flow
+              await logout();
               
               // Clear the navigation stack so back button works correctly on splash screen
               if (router.canDismiss()) {
@@ -152,10 +152,40 @@ export default function Account() {
     }
 
     if (item.key === 'delete') {
-      Alert.alert('Delete account', 'This will permanently delete your account. Continue?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => Alert.alert('Deleted', 'Account deleted (demo)') },
-      ]);
+      Alert.alert(
+        'Delete Account',
+        'Are you sure you want to permanently delete your account? This action cannot be undone and will delete all of your styling data.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete Permanently',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                console.log('Sending account deletion request to backend...');
+                const res = await deleteUserAccount();
+                if (res.ok) {
+                  Alert.alert('Success', 'Your account has been deleted successfully.');
+                  // Clear onboarding seen status so a new signup gets the guide again
+                  await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => {});
+                  // Clear local session state and redirect to splash screen
+                  await logout();
+                  if (router.canDismiss()) {
+                    router.dismissAll();
+                  }
+                  router.replace('/splash');
+                } else {
+                  console.error('Account deletion backend failed:', res);
+                  Alert.alert('Error', 'Failed to delete account on the server. Please try again.');
+                }
+              } catch (error) {
+                console.error('Error during account deletion:', error);
+                Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+              }
+            },
+          },
+        ]
+      );
       return;
     }
 
