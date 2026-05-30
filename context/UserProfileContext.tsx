@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { supabase } from '../config/supabase';
+import { getSupabaseStorageKey } from '../config/env';
 
 export type UserProfile = {
   name: string | null;
@@ -91,13 +92,17 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
         });
       }
       
-      // 2. Explicitly clean the Supabase storage key in SecureStore to be absolutely sure
-      await SecureStore.deleteItemAsync('sb-mlvbxtjjwahtcdbtdpgd-auth-token').catch(() => {});
+      // 2. Explicitly clean the Supabase storage key dynamically
+      const supabaseStorageKey = getSupabaseStorageKey();
+      await SecureStore.deleteItemAsync(supabaseStorageKey).catch(() => {});
 
       // 3. Clear backend auth token
-      await SecureStore.deleteItemAsync('authToken');
+      await SecureStore.deleteItemAsync('authToken').catch(() => {});
 
-      // 4. Reset context state
+      // 4. Clear onboarding seen status so a new user on this device sees the guide
+      await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => {});
+
+      // 5. Reset context state
       resetProfile();
       console.log('✅ Logout completed successfully');
     } catch (error) {
