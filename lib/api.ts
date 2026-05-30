@@ -1,6 +1,7 @@
 // app/lib/api.ts
 import * as SecureStore from 'expo-secure-store';
 import { useUserProfile } from '../context/UserProfileContext';
+import { ENV } from '../config/env';
 
 export type SendLikePayload = {
   productId: number | string;
@@ -13,16 +14,16 @@ export type ApiResult = {
   data?: any;
 };
 
-const SEND_OTP_URL = 'http://192.168.1.5:8080/api/auth/send-otp';
-const VERIFY_OTP_URL = 'http://192.168.1.5:8080/api/auth/verify-otp';
-const PROFILE_CREATE_URL = 'http://192.168.1.5:8080/api/profile/create';
-const GET_PRODUCTS_URL = 'http://192.168.1.5:8080/api/user/products/getHomeFeedProducts';
-const ACTIONS_URL = 'http://192.168.1.5:8080/api/actions'; // Like/Unlike endpoint
-const ACTIONS_BULK_URL = 'http://192.168.1.5:8080/api/actions/bulk/seen'; // Bulk actions endpoint
-const WISHLIST_URL = 'http://192.168.1.5:8080/api/user/products/getWishlistData';
-const RECENT_PRODUCTS_URL = 'http://192.168.1.5:8080/api/user/products/getProductBasedOnAction';
-const VALIDATE_TOKEN_URL = 'http://192.168.1.5:8080/api/profile/tokenValidation';
-const DISCOVER_URL = 'http://192.168.1.5:8080/api/discover/getData';
+const SEND_OTP_URL = `${ENV.API_BASE_URL}/api/auth/send-otp`;
+const VERIFY_OTP_URL = `${ENV.API_BASE_URL}/api/auth/verify-otp`;
+const PROFILE_CREATE_URL = `${ENV.API_BASE_URL}/api/profile/create`;
+const GET_PRODUCTS_URL = `${ENV.API_BASE_URL}/api/user/products/getHomeFeedProducts`;
+const ACTIONS_URL = `${ENV.API_BASE_URL}/api/actions`; // Like/Unlike endpoint
+const ACTIONS_BULK_URL = `${ENV.API_BASE_URL}/api/actions/bulk/seen`; // Bulk actions endpoint
+const WISHLIST_URL = `${ENV.API_BASE_URL}/api/user/products/getWishlistData`;
+const RECENT_PRODUCTS_URL = `${ENV.API_BASE_URL}/api/user/products/getProductBasedOnAction`;
+const VALIDATE_TOKEN_URL = `${ENV.API_BASE_URL}/api/profile/tokenValidation`;
+const DISCOVER_URL = `${ENV.API_BASE_URL}/api/discover/getData`;
 // Development mock toggle:
 // - By default, mocks are enabled in dev (__DEV__)
 // - Set `global.__FORCE_API_CALL__ = true` (in dev console or at app startup) to force real network requests

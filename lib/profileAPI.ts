@@ -1,6 +1,7 @@
 import { UserProfile } from '../context/UserProfileContext';
+import { ENV } from '../config/env';
 
-const BASE_URL = 'http://192.168.1.5:8080'; // Update with your backend URL
+const BASE_URL = ENV.API_BASE_URL;
 
 export const fetchUserProfile = async (authToken: string) => {
   try {
