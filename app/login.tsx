@@ -4,12 +4,21 @@ import { ActivityIndicator, Image, StyleSheet, TextInput, TouchableOpacity, View
 import * as SecureStore from 'expo-secure-store';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
 import { ThemedText } from '../components/themed-text';
 import { ThemedView } from '../components/themed-view';
 import { Images } from '../constants/images';
 import { sendOtp, verifyOtp } from '../lib/api';
+import { fetchUserProfile } from '../lib/profileAPI';
 import { useUserProfile } from '../context/UserProfileContext';
+import { supabase } from '../config/supabase';
+
+WebBrowser.maybeCompleteAuthSession();
+
+// Track if the initial deep link launch URL has already been processed to prevent re-processing it on mount after logout
+let initialUrlProcessed = false;
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -23,6 +32,100 @@ export default function LoginScreen() {
   const router = useRouter();
   const { setAuthToken } = useUserProfile();
   const backPressCount = useRef(0);
+
+  // Listen for incoming deep links (handles Android redirects beautifully!)
+  useEffect(() => {
+    const handleDeepLink = async (event: { url: string }) => {
+      console.log('Incoming deep link captured:', event.url);
+      
+      // Parse query params or fragment
+      let accessToken: string | null = null;
+      let refreshToken: string | null = null;
+
+      const parsed = Linking.parse(event.url);
+      accessToken = (parsed.queryParams?.access_token as string) || null;
+      refreshToken = (parsed.queryParams?.refresh_token as string) || null;
+
+      if (!accessToken && event.url.includes('#')) {
+        const hash = event.url.split('#')[1];
+        const params = new URLSearchParams(hash);
+        accessToken = params.get('access_token');
+        refreshToken = params.get('refresh_token');
+      }
+
+      if (!accessToken && event.url.includes('#')) {
+        const hashIndex = event.url.indexOf('#');
+        if (hashIndex !== -1) {
+          const hash = event.url.substring(hashIndex + 1);
+          const params = hash.split('&').reduce((acc, pair) => {
+            const [key, value] = pair.split('=');
+            if (key && value) {
+              acc[key] = decodeURIComponent(value);
+            }
+            return acc;
+          }, {} as Record<string, string>);
+          accessToken = params.access_token || null;
+          refreshToken = params.refresh_token || null;
+        }
+      }
+
+      if (accessToken && refreshToken) {
+        console.log('Tokens successfully extracted from deep link!');
+        console.log('Access Token:', accessToken);
+        console.log('Refresh Token:', refreshToken);
+        
+        console.log('Setting session on Supabase client...');
+        try {
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (sessionError) {
+            console.error('Error setting session on Supabase:', sessionError);
+            Alert.alert('Login Error', sessionError.message || 'Failed to establish Supabase session');
+            return;
+          }
+
+          const token = sessionData?.session?.access_token;
+          if (token) {
+            console.log('Session established! Saving token to SecureStore:', token);
+            await SecureStore.setItemAsync('authToken', token);
+            setAuthToken(token);
+
+            console.log('Checking profile setup for user...');
+            const profileRes = await fetchUserProfile(token);
+            const isNew = !profileRes.success || !profileRes.data || !profileRes.data.styleVibes;
+            console.log('User profile setup status:', isNew ? 'NEW USER' : 'EXISTING USER');
+
+            if (isNew) {
+              await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => {});
+              router.replace('/profileSetup-1styleVibe' as any);
+            } else {
+              router.replace('/(tabs)/home' as any);
+            }
+          }
+        } catch (err: any) {
+          console.error('Error handling deep link session:', err);
+        }
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    // Also check if the app was launched from a deep link (cold start)
+    Linking.getInitialURL().then((url) => {
+      if (url && !initialUrlProcessed) {
+        initialUrlProcessed = true;
+        console.log('App launched with initial URL:', url);
+        handleDeepLink({ url });
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   // Handle back press - require double press to exit
   useFocusEffect(
@@ -173,6 +276,121 @@ export default function LoginScreen() {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      const redirectUrl = Linking.createURL('/');
+      console.log('Google OAuth redirect URL:', redirectUrl);
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+          queryParams: {
+            prompt: 'select_account',
+          },
+        },
+      });
+
+      console.log('signInWithOAuth response:', data);
+
+      if (error) {
+        console.error('Supabase OAuth error:', error);
+        Alert.alert('Login Error', error.message || 'Supabase OAuth failed');
+        return;
+      }
+
+      if (data?.url) {
+        console.log('Opening browser for Google OAuth flow:', data.url);
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+
+        if (result.type === 'success' && result.url) {
+          console.log('WebBrowser redirect successful, URL:', result.url);
+          
+          // Parse fragment/hash parameters first, falling back to query parameters
+          let accessToken: string | null = null;
+          let refreshToken: string | null = null;
+
+          const parsed = Linking.parse(result.url);
+          accessToken = (parsed.queryParams?.access_token as string) || null;
+          refreshToken = (parsed.queryParams?.refresh_token as string) || null;
+
+          if (!accessToken && result.url.includes('#')) {
+            const hash = result.url.split('#')[1];
+            const params = new URLSearchParams(hash);
+            accessToken = params.get('access_token');
+            refreshToken = params.get('refresh_token');
+          }
+
+          if (!accessToken && result.url.includes('#')) {
+            // Fallback parsing of fragment
+            const hashIndex = result.url.indexOf('#');
+            if (hashIndex !== -1) {
+              const hash = result.url.substring(hashIndex + 1);
+              const params = hash.split('&').reduce((acc, pair) => {
+                const [key, value] = pair.split('=');
+                if (key && value) {
+                  acc[key] = decodeURIComponent(value);
+                }
+                return acc;
+              }, {} as Record<string, string>);
+              accessToken = params.access_token || null;
+              refreshToken = params.refresh_token || null;
+            }
+          }
+
+          if (accessToken && refreshToken) {
+            console.log('Tokens extracted from redirect URL. Setting session on Supabase client...');
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (sessionError) {
+              console.error('Error setting session on Supabase:', sessionError);
+              Alert.alert('Login Error', sessionError.message || 'Failed to establish Supabase session');
+              return;
+            }
+
+            const token = sessionData?.session?.access_token;
+            if (token) {
+              console.log('Session established! Saving token:', token);
+              await SecureStore.setItemAsync('authToken', token);
+              setAuthToken(token);
+
+              // Check if user already has a profile setup
+              console.log('Checking profile setup for user...');
+              const profileRes = await fetchUserProfile(token);
+              const isNew = !profileRes.success || !profileRes.data || !profileRes.data.styleVibes;
+              console.log('User profile setup status:', isNew ? 'NEW USER' : 'EXISTING USER');
+ 
+              if (isNew) {
+                await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => {});
+                router.replace('/profileSetup-1styleVibe' as any);
+              } else {
+                router.replace('/(tabs)/home' as any);
+              }
+            } else {
+              console.error('No access token in Supabase session data');
+              Alert.alert('Login Error', 'Access token could not be retrieved.');
+            }
+          } else {
+            console.warn('Tokens could not be extracted from OAuth callback URL');
+            Alert.alert('Login Error', 'Failed to retrieve authentication tokens from callback.');
+          }
+        } else {
+          console.log('WebBrowser was closed or cancelled by user, result:', result);
+        }
+      } else {
+        console.error('No OAuth URL returned from Supabase');
+        Alert.alert('Login Error', 'Google OAuth URL could not be generated.');
+      }
+    } catch (err: any) {
+      console.error('Google Sign In Catch Error:', err);
+      Alert.alert('Login Error', err.message || 'An unexpected error occurred during Google sign in');
+    }
+  };
+
   const handleSignUp = () => {
     router.push('/createProfile' as any);
   };
@@ -317,7 +535,7 @@ export default function LoginScreen() {
                 <ThemedText style={styles.socialText}>Apple</ThemedText>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.socialButton}>
+              <TouchableOpacity style={styles.socialButton} onPress={signInWithGoogle}>
                 <MaterialCommunityIcons name="google" size={22} color="#000" />
                 <ThemedText style={styles.socialText}>Google</ThemedText>
               </TouchableOpacity>
