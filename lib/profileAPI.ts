@@ -1,6 +1,7 @@
 import { UserProfile } from '../context/UserProfileContext';
+import { ENV } from '../config/env';
 
-const BASE_URL = 'https://evaira-backend.onrender.com'; // Update with your backend URL
+const BASE_URL = ENV.API_BASE_URL;
 
 export const fetchUserProfile = async (authToken: string) => {
   try {
@@ -8,18 +9,22 @@ export const fetchUserProfile = async (authToken: string) => {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: authToken,
+        Authorization: authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`,
       },
     });
 
     if (!response.ok) {
+      if (response.status === 404) {
+        // Expected case for new or deleted users
+        return { success: false, data: null };
+      }
       throw new Error(`HTTP ${response.status}`);
     }
 
     const data = await response.json();
     return { success: true, data };
   } catch (error) {
-    console.error('Error fetching profile:', error);
+    console.warn('Info: Profile fetch skipped or returned non-OK status:', error instanceof Error ? error.message : error);
     return { success: false, data: null };
   }
 };
@@ -56,19 +61,20 @@ export const submitUserProfile = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: profile.authToken,
+        Authorization: profile.authToken.startsWith('Bearer ') ? profile.authToken : `Bearer ${profile.authToken}`,
       },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
+      const text = await response.text().catch(() => '');
       try {
-        const error = await response.json();
+        const error = JSON.parse(text);
         throw new Error(error.message || `HTTP ${response.status}`);
       } catch (parseError) {
-        // Backend returned non-JSON response
-        const text = await response.text();
-        throw new Error(`HTTP ${response.status}: ${text}`);
+        // Backend returned non-JSON response (e.g. Spring Boot HTML stack trace)
+        const cleanMsg = text.length > 200 ? text.substring(0, 200) + '...' : text;
+        throw new Error(`HTTP ${response.status}: ${cleanMsg || 'Server Error'}`);
       }
     }
 

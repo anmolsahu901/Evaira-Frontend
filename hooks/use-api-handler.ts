@@ -11,15 +11,15 @@ import { useUserProfile } from '../context/UserProfileContext';
  */
 export function useApiHandler() {
   const router = useRouter();
-  const { resetProfile } = useUserProfile();
+  const { logout } = useUserProfile();
 
   const handleError = async (status?: number, error?: any) => {
     // Handle 401: Unauthorized (token expired or user deleted)
     if (status === 401) {
       console.error('❌ Unauthorized (401) - Logging out user');
       
-      // Reset profile context
-      resetProfile();
+      // Reset profile context and clear tokens cleanly
+      await logout().catch(e => console.error('Error during automatic logout:', e));
       
       // Show alert to user
       Alert.alert(

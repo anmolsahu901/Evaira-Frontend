@@ -15,10 +15,11 @@ import { ThemedView } from '../components/themed-view';
 import { Images } from '../constants/images';
 import { useUserProfile } from '../context/UserProfileContext';
 import { validateToken, prefetchHomeData } from '../lib/api';
+import { fetchUserProfile } from '../lib/profileAPI';
 
 export default function SplashScreen() {
   const router = useRouter();
-  const { setAuthToken } = useUserProfile();
+  const { setAuthToken, logout } = useUserProfile();
   const backPressCount = useRef(0);
 
   // Animation values
@@ -104,17 +105,26 @@ export default function SplashScreen() {
             // ✅ Token is valid
             setAuthToken(token); // [PERSIST_AUTH]
 
-            console.log('✅ Token validation successful. Token is valid. Navigating to home.');
+            console.log('✅ Token validation successful. Token is valid. Checking onboarding status...');
 
-            // PREFETCH DATA EARLY! Start fetching Home data before navigating
-            prefetchHomeData().catch(e => console.log('Prefetch home data failed', e));
+            // Check if user has completed onboarding profile setup
+            const profileRes = await fetchUserProfile(token);
+            const isNew = !profileRes.success || !profileRes.data || !profileRes.data.styleVibes || profileRes.data.styleVibes.length === 0;
 
-            router.replace('/(tabs)/home');
+            if (isNew) {
+              console.log('User profile setup is incomplete (NEW USER). Navigating to onboarding.');
+              router.replace('/profileSetup-1styleVibe');
+            } else {
+              console.log('User profile setup is complete (EXISTING USER). Navigating to home.');
+              // PREFETCH DATA EARLY! Start fetching Home data before navigating
+              prefetchHomeData().catch(e => console.log('Prefetch home data failed', e));
+              router.replace('/(tabs)/home');
+            }
 
           } else {
             // ❌ Token is expired (401) or validation failed - clear it and send to login
             console.warn('❌ Token validation failed. Clearing token and redirecting to login.');
-            await SecureStore.deleteItemAsync('authToken');
+            await logout().catch(e => console.error('Error during auto-logout in splash:', e));
             router.replace('/login');
           }
         } else { // [PERSIST_AUTH]
