@@ -99,9 +99,9 @@ export const FeedView = ({ initialItems, initialIndex, onClose, disableSeenTrack
   };
 
   const handleSwipe = async (product: HomeProduct, direction: 'left' | 'right') => {
-    if (direction === 'left') {
-      setSwipedStack(prev => [{ product, direction }, ...prev]);
-    }
+    // if (direction === 'left') {
+    //   // setSwipedStack(prev => [{ product, direction }, ...prev]);
+    // }
     setProducts(prev => prev.filter(p => p.id !== product.id));
 
     if (direction === 'right') {
