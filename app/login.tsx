@@ -37,7 +37,7 @@ export default function LoginScreen() {
   useEffect(() => {
     const handleDeepLink = async (event: { url: string }) => {
       console.log('Incoming deep link captured:', event.url);
-      
+
       // Parse query params or fragment
       let accessToken: string | null = null;
       let refreshToken: string | null = null;
@@ -73,7 +73,7 @@ export default function LoginScreen() {
         console.log('Tokens successfully extracted from deep link!');
         console.log('Access Token:', accessToken);
         console.log('Refresh Token:', refreshToken);
-        
+
         console.log('Setting session on Supabase client...');
         try {
           const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
@@ -99,7 +99,7 @@ export default function LoginScreen() {
             console.log('User profile setup status:', isNew ? 'NEW USER' : 'EXISTING USER');
 
             if (isNew) {
-              await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => {});
+              await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => { });
               router.replace('/profileSetup-1styleVibe' as any);
             } else {
               router.replace('/(tabs)/home' as any);
@@ -306,7 +306,7 @@ export default function LoginScreen() {
 
         if (result.type === 'success' && result.url) {
           console.log('WebBrowser redirect successful, URL:', result.url);
-          
+
           // Parse fragment/hash parameters first, falling back to query parameters
           let accessToken: string | null = null;
           let refreshToken: string | null = null;
@@ -363,9 +363,9 @@ export default function LoginScreen() {
               const profileRes = await fetchUserProfile(token);
               const isNew = !profileRes.success || !profileRes.data || !profileRes.data.styleVibes;
               console.log('User profile setup status:', isNew ? 'NEW USER' : 'EXISTING USER');
- 
+
               if (isNew) {
-                await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => {});
+                await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => { });
                 router.replace('/profileSetup-1styleVibe' as any);
               } else {
                 router.replace('/(tabs)/home' as any);
@@ -397,35 +397,36 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior="padding"
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }} bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-        {/* Main Content */}
-        <View style={styles.contentWrapper}>
+          {/* Main Content */}
+          <View style={styles.contentWrapper}>
 
-          {/* Lightning Icon */}
-          <View style={styles.iconContainer}>
-            <View style={styles.iconCircle}>
-              <Image
-                source={require('../assets/circle_icon.png')}
-                style={styles.iconImage}
-                resizeMode="contain"
-              />
+            {/* Lightning Icon */}
+            <View style={styles.iconContainer}>
+              <View style={styles.iconCircle}>
+                <Image
+                  source={require('../assets/circle_icon.png')}
+                  style={styles.iconImage}
+                  resizeMode="contain"
+                />
+              </View>
             </View>
-          </View>
 
-          {/* Title */}
-          <ThemedText style={styles.title}>Your AI stylist is waiting.</ThemedText>
-          <ThemedText style={styles.subtitle}>Sign in to see today's curated look.</ThemedText>
+            {/* Title */}
+            <ThemedText style={styles.title}>Your AI stylist is waiting.</ThemedText>
+            <ThemedText style={styles.subtitle}>Sign in to see today's curated look.</ThemedText>
 
-          {/* LOGIN CARD */}
-          <View style={styles.loginCard}>
+            {/* LOGIN CARD */}
+            <View style={styles.loginCard}>
 
-            {/* Email */}
+              {/* Email-OTP validation commented out for now as we transition to OAuth-only login */}
+              {/*
             <View style={styles.formSection}>
               <ThemedText style={styles.label}>EMAIL ADDRESS</ThemedText>
 
@@ -452,7 +453,6 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Message */}
             {message ? (
               <ThemedText
                 style={[
@@ -466,7 +466,6 @@ export default function LoginScreen() {
               </ThemedText>
             ) : null}
 
-            {/* OTP */}
             {otpSent && (
               <View style={styles.formSection}>
                 <View style={styles.otpHeader}>
@@ -494,7 +493,6 @@ export default function LoginScreen() {
               </View>
             )}
 
-            {/* Button */}
             <TouchableOpacity
               style={[
                 styles.primaryButton,
@@ -521,62 +519,80 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Divider */}
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
               <ThemedText style={styles.dividerText}>OR CONTINUE WITH</ThemedText>
               <View style={styles.dividerLine} />
             </View>
+            */}
 
-            {/* Social */}
-            <View style={styles.socialRow}>
-              <TouchableOpacity style={styles.socialButton}>
-                <MaterialCommunityIcons name="apple" size={22} color="#000" />
-                <ThemedText style={styles.socialText}>Apple</ThemedText>
+              {/* Stacked Premium Social Logins */}
+              <View style={styles.socialContainer}>
+                <TouchableOpacity style={styles.appleButton}>
+                  <View style={styles.socialBtnContent}>
+                    <View style={styles.socialIconLeft}>
+                      <MaterialCommunityIcons name="apple" size={20} color="#FFFFFF" />
+                    </View>
+                    <ThemedText style={styles.appleButtonText}>Continue with Apple</ThemedText>
+                    <View style={styles.socialChevronRight}>
+                      <MaterialCommunityIcons name="chevron-right" size={16} color="rgba(255, 255, 255, 0.4)" />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.googleButton} onPress={signInWithGoogle}>
+                  <View style={styles.socialBtnContent}>
+                    <View style={styles.socialIconLeft}>
+                      <Image 
+                        source={require('../assets/images/google_logo.png')} 
+                        style={{ width: 22, height: 22 }} 
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <ThemedText style={styles.googleButtonText}>Continue with Google</ThemedText>
+                    <View style={styles.socialChevronRight}>
+                      <MaterialCommunityIcons name="chevron-right" size={16} color="rgba(0, 0, 0, 0.25)" />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+            </View>
+
+          </View>
+
+          {/* Bottom Section */}
+          <View style={styles.bottomSection}>
+
+
+            <View style={styles.securityBar}>
+              <MaterialCommunityIcons name="shield-check" size={16} color="#000000" />
+              <ThemedText style={styles.securityTextWhite}>
+                Secure, encrypted login powered by Evaira AI
+              </ThemedText>
+            </View>
+
+            <View style={styles.footerContainer}>
+              <TouchableOpacity>
+                <ThemedText style={styles.footerLink}>Privacy Policy</ThemedText>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.socialButton} onPress={signInWithGoogle}>
-                <MaterialCommunityIcons name="google" size={22} color="#000" />
-                <ThemedText style={styles.socialText}>Google</ThemedText>
+              <ThemedText style={styles.footerDot}>•</ThemedText>
+
+              <TouchableOpacity>
+                <ThemedText style={styles.footerLink}>Terms of Service</ThemedText>
+              </TouchableOpacity>
+
+              <ThemedText style={styles.footerDot}>•</ThemedText>
+
+              <TouchableOpacity>
+                <ThemedText style={styles.footerLink}>Support</ThemedText>
               </TouchableOpacity>
             </View>
 
           </View>
 
-        </View>
-
-        {/* Bottom Section */}
-        <View style={styles.bottomSection}>
-        
-
-          <View style={styles.securityBar}>
-            <MaterialCommunityIcons name="shield-check" size={16} color="#000000" />
-            <ThemedText style={styles.securityTextWhite}>
-              Secure, encrypted login powered by Evaira AI
-            </ThemedText>
-          </View>
-
-          <View style={styles.footerContainer}>
-            <TouchableOpacity>
-              <ThemedText style={styles.footerLink}>Privacy Policy</ThemedText>
-            </TouchableOpacity>
-
-            <ThemedText style={styles.footerDot}>•</ThemedText>
-
-            <TouchableOpacity>
-              <ThemedText style={styles.footerLink}>Terms of Service</ThemedText>
-            </TouchableOpacity>
-
-            <ThemedText style={styles.footerDot}>•</ThemedText>
-
-            <TouchableOpacity>
-              <ThemedText style={styles.footerLink}>Support</ThemedText>
-            </TouchableOpacity>
-          </View>
-
-        </View>
-
-      </ScrollView>
+        </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
   );
@@ -600,7 +616,8 @@ const styles = StyleSheet.create({
 
 
   iconContainer: {
-    marginBottom: 25,
+    marginTop: 80,
+    marginBottom: 20,
     alignItems: 'center',
   },
   iconImage: {
@@ -733,7 +750,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   socialButtonText: {
-    fontSize: 14,
+    fontSize: 18,
     color: '#1a1a1a',
     fontWeight: '500',
   },
@@ -761,10 +778,11 @@ const styles = StyleSheet.create({
   },
   loginCard: {
     width: '100%',
-    backgroundColor: '#f5f5f5ff',
+    backgroundColor: '#ffffffff',
     borderRadius: 20,
     padding: 20,
-    marginTop: 5,
+    marginTop: 50,
+    
   },
 
   inputWrapper: {
@@ -829,5 +847,64 @@ const styles = StyleSheet.create({
   bottomSection: {
     paddingBottom: 15,
     alignItems: 'center',
+  },
+
+  // Premium Social Login Styles
+  socialContainer: {
+    gap: 20,
+  },
+  appleButton: {
+    width: '100%',
+    height: 60,
+    backgroundColor: '#09090B',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  googleButton: {
+    width: '100%',
+    height: 60,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E4E4E7',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  socialBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 16,
+  },
+  socialIconLeft: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  socialChevronRight: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  appleButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  googleButtonText: {
+    color: '#18181B',
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 });

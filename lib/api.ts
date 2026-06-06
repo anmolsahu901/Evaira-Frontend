@@ -431,7 +431,15 @@ export async function getDiscoverData(forceRefresh = false): Promise<ApiResult> 
 
 // ✅ NEW: Delete User Account
 export async function deleteUserAccount(): Promise<ApiResult> {
-  return authenticatedFetch('http://192.168.1.5:8080/api/profile/delete', {
+  return authenticatedFetch(`${ENV.API_BASE_URL}/api/profile/delete`, {
     method: 'DELETE',
+  });
+}
+
+// ✅ NEW: Upload Push Notification Token
+export async function uploadPushToken(token: string): Promise<ApiResult> {
+  return authenticatedFetch(`${ENV.API_BASE_URL}/api/profile/push-token`, {
+    method: 'POST',
+    body: JSON.stringify({ token }),
   });
 }
