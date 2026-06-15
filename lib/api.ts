@@ -1,6 +1,6 @@
 // app/lib/api.ts
 import * as SecureStore from 'expo-secure-store';
-import { useUserProfile } from '../context/UserProfileContext';
+import { supabase } from '../config/supabase';
 import { ENV } from '../config/env';
 
 export type SendLikePayload = {
@@ -35,6 +35,24 @@ function isForceApiCall() {
 // ✅ NEW: Helper to get auth token from secure storage
 export async function getAuthToken(): Promise<string | null> {
   try {
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
+
+    if (error) {
+      console.warn('Supabase getSession error:', error.message || error);
+    }
+
+    const accessToken = session?.access_token ?? null;
+    if (accessToken) {
+      const storedToken = await SecureStore.getItemAsync('authToken');
+      if (storedToken !== accessToken) {
+        await SecureStore.setItemAsync('authToken', accessToken).catch(() => {});
+      }
+      return accessToken;
+    }
+
     return await SecureStore.getItemAsync('authToken');
   } catch (error) {
     console.error('Error retrieving auth token:', error);
@@ -431,7 +449,17 @@ export async function getDiscoverData(forceRefresh = false): Promise<ApiResult> 
 
 // ✅ NEW: Delete User Account
 export async function deleteUserAccount(): Promise<ApiResult> {
-  return authenticatedFetch('http://192.168.1.5:8080/api/profile/delete', {
+  return authenticatedFetch(`${ENV.API_BASE_URL}/api/profile/delete`, {
     method: 'DELETE',
+  });
+}
+
+// ✅ NEW: Upload Push Notification Token
+
+
+export async function uploadPushToken(token: string): Promise<ApiResult> {
+  return authenticatedFetch(`${ENV.API_BASE_URL}/api/profile/push-token`, {
+    method: 'POST',
+    body: JSON.stringify({ token }),
   });
 }

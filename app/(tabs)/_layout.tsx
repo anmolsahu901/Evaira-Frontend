@@ -2,8 +2,12 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { Platform, StatusBar, View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNotifications } from '../../hooks/useNotifications';
+import { useUserProfile } from '../../context/UserProfileContext';
 
 export default function TabLayout() {
+  const { authToken } = useUserProfile();
+  useNotifications(authToken);
 
 
   return (

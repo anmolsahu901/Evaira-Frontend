@@ -179,9 +179,9 @@ export default function Home() {
     }
 
     // push to undo stack only for dislike (swipe left)
-    if (direction === 'left') {
-      setSwipedStack(prev => [{ product, direction }, ...prev]);
-    }
+    // if (direction === 'left') {
+    //   // setSwipedStack(prev => [{ product, direction }, ...prev]);
+    // }
 
     // remove swiped product from the deck
     setProducts(prev => prev.filter(p => p.id !== product.id));

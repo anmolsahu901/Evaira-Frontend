@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { supabase } from '../config/supabase';
 import { getSupabaseStorageKey } from '../config/env';
+import { ChunkedSecureStore } from '../lib/secureStore';
 
 export type UserProfile = {
   name: string | null;
@@ -94,7 +95,7 @@ export const UserProfileProvider: React.FC<{ children: React.ReactNode }> = ({ c
       
       // 2. Explicitly clean the Supabase storage key dynamically
       const supabaseStorageKey = getSupabaseStorageKey();
-      await SecureStore.deleteItemAsync(supabaseStorageKey).catch(() => {});
+      await ChunkedSecureStore.removeItem(supabaseStorageKey).catch(() => {});
 
       // 3. Clear backend auth token
       await SecureStore.deleteItemAsync('authToken').catch(() => {});

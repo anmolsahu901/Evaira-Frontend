@@ -20,6 +20,46 @@ WebBrowser.maybeCompleteAuthSession();
 // Track if the initial deep link launch URL has already been processed to prevent re-processing it on mount after logout
 let initialUrlProcessed = false;
 
+type ParsedAuthParams = {
+  accessToken: string | null;
+  refreshToken: string | null;
+  expiresIn: number | null;
+  tokenType: string | null;
+  providerToken: string | null;
+  providerRefreshToken: string | null;
+};
+
+function parseAuthParamsFromUrl(url: string): ParsedAuthParams {
+  const params = new URLSearchParams();
+  const parsed = Linking.parse(url);
+
+  if (parsed.queryParams) {
+    Object.entries(parsed.queryParams).forEach(([key, value]) => {
+      if (typeof value === 'string') {
+        params.set(key, value);
+      }
+    });
+  }
+
+  const hashIndex = url.indexOf('#');
+  if (hashIndex !== -1) {
+    const hash = url.substring(hashIndex + 1);
+    const hashParams = new URLSearchParams(hash);
+    hashParams.forEach((value, key) => {
+      params.set(key, value);
+    });
+  }
+
+  return {
+    accessToken: params.get('access_token'),
+    refreshToken: params.get('refresh_token'),
+    expiresIn: params.get('expires_in') ? Number(params.get('expires_in')) : null,
+    tokenType: params.get('token_type'),
+    providerToken: params.get('provider_token'),
+    providerRefreshToken: params.get('provider_refresh_token'),
+  };
+}
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -37,56 +77,33 @@ export default function LoginScreen() {
   useEffect(() => {
     const handleDeepLink = async (event: { url: string }) => {
       console.log('Incoming deep link captured:', event.url);
-      
-      // Parse query params or fragment
-      let accessToken: string | null = null;
-      let refreshToken: string | null = null;
 
-      const parsed = Linking.parse(event.url);
-      accessToken = (parsed.queryParams?.access_token as string) || null;
-      refreshToken = (parsed.queryParams?.refresh_token as string) || null;
-
-      if (!accessToken && event.url.includes('#')) {
-        const hash = event.url.split('#')[1];
-        const params = new URLSearchParams(hash);
-        accessToken = params.get('access_token');
-        refreshToken = params.get('refresh_token');
-      }
-
-      if (!accessToken && event.url.includes('#')) {
-        const hashIndex = event.url.indexOf('#');
-        if (hashIndex !== -1) {
-          const hash = event.url.substring(hashIndex + 1);
-          const params = hash.split('&').reduce((acc, pair) => {
-            const [key, value] = pair.split('=');
-            if (key && value) {
-              acc[key] = decodeURIComponent(value);
-            }
-            return acc;
-          }, {} as Record<string, string>);
-          accessToken = params.access_token || null;
-          refreshToken = params.refresh_token || null;
-        }
-      }
+      const {
+        accessToken,
+        refreshToken,
+        expiresIn,
+        tokenType,
+        providerToken,
+        providerRefreshToken,
+      } = parseAuthParamsFromUrl(event.url);
 
       if (accessToken && refreshToken) {
         console.log('Tokens successfully extracted from deep link!');
         console.log('Access Token:', accessToken);
         console.log('Refresh Token:', refreshToken);
-        
+
         console.log('Setting session on Supabase client...');
         try {
-          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
+              const sessionPayload: any = {
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                expires_in: expiresIn ?? undefined,
+                token_type: tokenType ?? 'bearer',
+                provider_token: providerToken ?? undefined,
+                provider_refresh_token: providerRefreshToken ?? undefined,
+              };
 
-          if (sessionError) {
-            console.error('Error setting session on Supabase:', sessionError);
-            Alert.alert('Login Error', sessionError.message || 'Failed to establish Supabase session');
-            return;
-          }
-
+              const { data: sessionData, error: sessionError } = await supabase.auth.setSession(sessionPayload);
           const token = sessionData?.session?.access_token;
           if (token) {
             console.log('Session established! Saving token to SecureStore:', token);
@@ -99,7 +116,7 @@ export default function LoginScreen() {
             console.log('User profile setup status:', isNew ? 'NEW USER' : 'EXISTING USER');
 
             if (isNew) {
-              await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => {});
+              await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => { });
               router.replace('/profileSetup-1styleVibe' as any);
             } else {
               router.replace('/(tabs)/home' as any);
@@ -306,45 +323,27 @@ export default function LoginScreen() {
 
         if (result.type === 'success' && result.url) {
           console.log('WebBrowser redirect successful, URL:', result.url);
-          
-          // Parse fragment/hash parameters first, falling back to query parameters
-          let accessToken: string | null = null;
-          let refreshToken: string | null = null;
 
-          const parsed = Linking.parse(result.url);
-          accessToken = (parsed.queryParams?.access_token as string) || null;
-          refreshToken = (parsed.queryParams?.refresh_token as string) || null;
-
-          if (!accessToken && result.url.includes('#')) {
-            const hash = result.url.split('#')[1];
-            const params = new URLSearchParams(hash);
-            accessToken = params.get('access_token');
-            refreshToken = params.get('refresh_token');
-          }
-
-          if (!accessToken && result.url.includes('#')) {
-            // Fallback parsing of fragment
-            const hashIndex = result.url.indexOf('#');
-            if (hashIndex !== -1) {
-              const hash = result.url.substring(hashIndex + 1);
-              const params = hash.split('&').reduce((acc, pair) => {
-                const [key, value] = pair.split('=');
-                if (key && value) {
-                  acc[key] = decodeURIComponent(value);
-                }
-                return acc;
-              }, {} as Record<string, string>);
-              accessToken = params.access_token || null;
-              refreshToken = params.refresh_token || null;
-            }
-          }
+          const {
+            accessToken,
+            refreshToken,
+            expiresIn,
+            tokenType,
+            providerToken,
+            providerRefreshToken,
+          } = parseAuthParamsFromUrl(result.url);
 
           if (accessToken && refreshToken) {
             console.log('Tokens extracted from redirect URL. Setting session on Supabase client...');
-            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            const sessionPayload: any = {
               access_token: accessToken,
               refresh_token: refreshToken,
-            });
+              expires_in: expiresIn ?? undefined,
+              token_type: tokenType ?? 'bearer',
+              provider_token: providerToken ?? undefined,
+              provider_refresh_token: providerRefreshToken ?? undefined,
+            };
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession(sessionPayload);
 
             if (sessionError) {
               console.error('Error setting session on Supabase:', sessionError);
@@ -363,9 +362,9 @@ export default function LoginScreen() {
               const profileRes = await fetchUserProfile(token);
               const isNew = !profileRes.success || !profileRes.data || !profileRes.data.styleVibes;
               console.log('User profile setup status:', isNew ? 'NEW USER' : 'EXISTING USER');
- 
+
               if (isNew) {
-                await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => {});
+                await SecureStore.deleteItemAsync('hasSeenOnboarding').catch(() => { });
                 router.replace('/profileSetup-1styleVibe' as any);
               } else {
                 router.replace('/(tabs)/home' as any);
@@ -397,35 +396,36 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior="padding"
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-between' }} bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-        {/* Main Content */}
-        <View style={styles.contentWrapper}>
+          {/* Main Content */}
+          <View style={styles.contentWrapper}>
 
-          {/* Lightning Icon */}
-          <View style={styles.iconContainer}>
-            <View style={styles.iconCircle}>
-              <Image
-                source={require('../assets/circle_icon.png')}
-                style={styles.iconImage}
-                resizeMode="contain"
-              />
+            {/* Lightning Icon */}
+            <View style={styles.iconContainer}>
+              <View style={styles.iconCircle}>
+                <Image
+                  source={require('../assets/circle_icon.png')}
+                  style={styles.iconImage}
+                  resizeMode="contain"
+                />
+              </View>
             </View>
-          </View>
 
-          {/* Title */}
-          <ThemedText style={styles.title}>Your AI stylist is waiting.</ThemedText>
-          <ThemedText style={styles.subtitle}>Sign in to see today's curated look.</ThemedText>
+            {/* Title */}
+            <ThemedText style={styles.title}>Your AI stylist is waiting.</ThemedText>
+            <ThemedText style={styles.subtitle}>Sign in to see today's curated look.</ThemedText>
 
-          {/* LOGIN CARD */}
-          <View style={styles.loginCard}>
+            {/* LOGIN CARD */}
+            <View style={styles.loginCard}>
 
-            {/* Email */}
+              {/* Email-OTP validation commented out for now as we transition to OAuth-only login */}
+              {/*
             <View style={styles.formSection}>
               <ThemedText style={styles.label}>EMAIL ADDRESS</ThemedText>
 
@@ -452,7 +452,6 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Message */}
             {message ? (
               <ThemedText
                 style={[
@@ -466,7 +465,6 @@ export default function LoginScreen() {
               </ThemedText>
             ) : null}
 
-            {/* OTP */}
             {otpSent && (
               <View style={styles.formSection}>
                 <View style={styles.otpHeader}>
@@ -494,7 +492,6 @@ export default function LoginScreen() {
               </View>
             )}
 
-            {/* Button */}
             <TouchableOpacity
               style={[
                 styles.primaryButton,
@@ -521,62 +518,80 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Divider */}
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
               <ThemedText style={styles.dividerText}>OR CONTINUE WITH</ThemedText>
               <View style={styles.dividerLine} />
             </View>
+            */}
 
-            {/* Social */}
-            <View style={styles.socialRow}>
-              <TouchableOpacity style={styles.socialButton}>
-                <MaterialCommunityIcons name="apple" size={22} color="#000" />
-                <ThemedText style={styles.socialText}>Apple</ThemedText>
+              {/* Stacked Premium Social Logins */}
+              <View style={styles.socialContainer}>
+                <TouchableOpacity style={styles.appleButton}>
+                  <View style={styles.socialBtnContent}>
+                    <View style={styles.socialIconLeft}>
+                      <MaterialCommunityIcons name="apple" size={20} color="#FFFFFF" />
+                    </View>
+                    <ThemedText style={styles.appleButtonText}>Continue with Apple</ThemedText>
+                    <View style={styles.socialChevronRight}>
+                      <MaterialCommunityIcons name="chevron-right" size={16} color="rgba(255, 255, 255, 0.4)" />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.googleButton} onPress={signInWithGoogle}>
+                  <View style={styles.socialBtnContent}>
+                    <View style={styles.socialIconLeft}>
+                      <Image 
+                        source={require('../assets/images/google_logo.png')} 
+                        style={{ width: 22, height: 22 }} 
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <ThemedText style={styles.googleButtonText}>Continue with Google</ThemedText>
+                    <View style={styles.socialChevronRight}>
+                      <MaterialCommunityIcons name="chevron-right" size={16} color="rgba(0, 0, 0, 0.25)" />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+            </View>
+
+          </View>
+
+          {/* Bottom Section */}
+          <View style={styles.bottomSection}>
+
+
+            <View style={styles.securityBar}>
+              <MaterialCommunityIcons name="shield-check" size={16} color="#000000" />
+              <ThemedText style={styles.securityTextWhite}>
+                Secure, encrypted login powered by Evaira AI
+              </ThemedText>
+            </View>
+
+            <View style={styles.footerContainer}>
+              <TouchableOpacity>
+                <ThemedText style={styles.footerLink}>Privacy Policy</ThemedText>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.socialButton} onPress={signInWithGoogle}>
-                <MaterialCommunityIcons name="google" size={22} color="#000" />
-                <ThemedText style={styles.socialText}>Google</ThemedText>
+              <ThemedText style={styles.footerDot}>•</ThemedText>
+
+              <TouchableOpacity>
+                <ThemedText style={styles.footerLink}>Terms of Service</ThemedText>
+              </TouchableOpacity>
+
+              <ThemedText style={styles.footerDot}>•</ThemedText>
+
+              <TouchableOpacity>
+                <ThemedText style={styles.footerLink}>Support</ThemedText>
               </TouchableOpacity>
             </View>
 
           </View>
 
-        </View>
-
-        {/* Bottom Section */}
-        <View style={styles.bottomSection}>
-        
-
-          <View style={styles.securityBar}>
-            <MaterialCommunityIcons name="shield-check" size={16} color="#000000" />
-            <ThemedText style={styles.securityTextWhite}>
-              Secure, encrypted login powered by Evaira AI
-            </ThemedText>
-          </View>
-
-          <View style={styles.footerContainer}>
-            <TouchableOpacity>
-              <ThemedText style={styles.footerLink}>Privacy Policy</ThemedText>
-            </TouchableOpacity>
-
-            <ThemedText style={styles.footerDot}>•</ThemedText>
-
-            <TouchableOpacity>
-              <ThemedText style={styles.footerLink}>Terms of Service</ThemedText>
-            </TouchableOpacity>
-
-            <ThemedText style={styles.footerDot}>•</ThemedText>
-
-            <TouchableOpacity>
-              <ThemedText style={styles.footerLink}>Support</ThemedText>
-            </TouchableOpacity>
-          </View>
-
-        </View>
-
-      </ScrollView>
+        </ScrollView>
       </KeyboardAvoidingView>
     </ThemedView>
   );
@@ -600,7 +615,8 @@ const styles = StyleSheet.create({
 
 
   iconContainer: {
-    marginBottom: 25,
+    marginTop: 80,
+    marginBottom: 20,
     alignItems: 'center',
   },
   iconImage: {
@@ -733,7 +749,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   socialButtonText: {
-    fontSize: 14,
+    fontSize: 18,
     color: '#1a1a1a',
     fontWeight: '500',
   },
@@ -761,10 +777,11 @@ const styles = StyleSheet.create({
   },
   loginCard: {
     width: '100%',
-    backgroundColor: '#f5f5f5ff',
+    backgroundColor: '#ffffffff',
     borderRadius: 20,
     padding: 20,
-    marginTop: 5,
+    marginTop: 50,
+    
   },
 
   inputWrapper: {
@@ -829,5 +846,64 @@ const styles = StyleSheet.create({
   bottomSection: {
     paddingBottom: 15,
     alignItems: 'center',
+  },
+
+  // Premium Social Login Styles
+  socialContainer: {
+    gap: 20,
+  },
+  appleButton: {
+    width: '100%',
+    height: 60,
+    backgroundColor: '#09090B',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  googleButton: {
+    width: '100%',
+    height: 60,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E4E4E7',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  socialBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 16,
+  },
+  socialIconLeft: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  socialChevronRight: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  appleButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  googleButtonText: {
+    color: '#18181B',
+    fontSize: 17,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 });

@@ -1,17 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
+import { ChunkedSecureStore } from '../lib/secureStore';
 import { ENV } from './env';
 
-// A secure storage adapter for Supabase that works on Expo using SecureStore
+// A secure storage adapter for Supabase that works on Expo using ChunkedSecureStore to bypass the 2048-byte limit
 const ExpoSecureStoreAdapter = {
     getItem: (key: string) => {
-        return SecureStore.getItemAsync(key);
+        return ChunkedSecureStore.getItem(key);
     },
     setItem: (key: string, value: string) => {
-        return SecureStore.setItemAsync(key, value);
+        return ChunkedSecureStore.setItem(key, value);
     },
     removeItem: (key: string) => {
-        return SecureStore.deleteItemAsync(key);
+        return ChunkedSecureStore.removeItem(key);
     },
 };
 
