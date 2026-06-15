@@ -69,8 +69,18 @@ export function useNotifications(authToken: string | null) {
         const data = response.notification.request.content.data;
         console.log('[notifications] Notification tapped with data:', data);
 
-        // Route directly to the Discover tab when clicked
-        router.push('/(tabs)/discover');
+        // Dynamically route based on the screen parameter sent by the backend
+        if (data?.screen === 'curation') {
+          router.push('/(tabs)/home'); // Daily curation feed matches home
+        } else if (data?.screen === 'discover') {
+          router.push('/(tabs)/discover');
+        } else if (data?.screen === 'stylist') {
+          router.push('/(tabs)/stylist');
+        } else if (data?.screen === 'wishlist') {
+          router.push('/(tabs)/wishlist');
+        } else {
+          router.push('/(tabs)/discover'); // default fallback
+        }
       });
     }
 

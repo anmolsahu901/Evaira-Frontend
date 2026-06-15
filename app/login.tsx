@@ -20,6 +20,46 @@ WebBrowser.maybeCompleteAuthSession();
 // Track if the initial deep link launch URL has already been processed to prevent re-processing it on mount after logout
 let initialUrlProcessed = false;
 
+type ParsedAuthParams = {
+  accessToken: string | null;
+  refreshToken: string | null;
+  expiresIn: number | null;
+  tokenType: string | null;
+  providerToken: string | null;
+  providerRefreshToken: string | null;
+};
+
+function parseAuthParamsFromUrl(url: string): ParsedAuthParams {
+  const params = new URLSearchParams();
+  const parsed = Linking.parse(url);
+
+  if (parsed.queryParams) {
+    Object.entries(parsed.queryParams).forEach(([key, value]) => {
+      if (typeof value === 'string') {
+        params.set(key, value);
+      }
+    });
+  }
+
+  const hashIndex = url.indexOf('#');
+  if (hashIndex !== -1) {
+    const hash = url.substring(hashIndex + 1);
+    const hashParams = new URLSearchParams(hash);
+    hashParams.forEach((value, key) => {
+      params.set(key, value);
+    });
+  }
+
+  return {
+    accessToken: params.get('access_token'),
+    refreshToken: params.get('refresh_token'),
+    expiresIn: params.get('expires_in') ? Number(params.get('expires_in')) : null,
+    tokenType: params.get('token_type'),
+    providerToken: params.get('provider_token'),
+    providerRefreshToken: params.get('provider_refresh_token'),
+  };
+}
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -38,36 +78,14 @@ export default function LoginScreen() {
     const handleDeepLink = async (event: { url: string }) => {
       console.log('Incoming deep link captured:', event.url);
 
-      // Parse query params or fragment
-      let accessToken: string | null = null;
-      let refreshToken: string | null = null;
-
-      const parsed = Linking.parse(event.url);
-      accessToken = (parsed.queryParams?.access_token as string) || null;
-      refreshToken = (parsed.queryParams?.refresh_token as string) || null;
-
-      if (!accessToken && event.url.includes('#')) {
-        const hash = event.url.split('#')[1];
-        const params = new URLSearchParams(hash);
-        accessToken = params.get('access_token');
-        refreshToken = params.get('refresh_token');
-      }
-
-      if (!accessToken && event.url.includes('#')) {
-        const hashIndex = event.url.indexOf('#');
-        if (hashIndex !== -1) {
-          const hash = event.url.substring(hashIndex + 1);
-          const params = hash.split('&').reduce((acc, pair) => {
-            const [key, value] = pair.split('=');
-            if (key && value) {
-              acc[key] = decodeURIComponent(value);
-            }
-            return acc;
-          }, {} as Record<string, string>);
-          accessToken = params.access_token || null;
-          refreshToken = params.refresh_token || null;
-        }
-      }
+      const {
+        accessToken,
+        refreshToken,
+        expiresIn,
+        tokenType,
+        providerToken,
+        providerRefreshToken,
+      } = parseAuthParamsFromUrl(event.url);
 
       if (accessToken && refreshToken) {
         console.log('Tokens successfully extracted from deep link!');
@@ -76,17 +94,16 @@ export default function LoginScreen() {
 
         console.log('Setting session on Supabase client...');
         try {
-          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
+              const sessionPayload: any = {
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                expires_in: expiresIn ?? undefined,
+                token_type: tokenType ?? 'bearer',
+                provider_token: providerToken ?? undefined,
+                provider_refresh_token: providerRefreshToken ?? undefined,
+              };
 
-          if (sessionError) {
-            console.error('Error setting session on Supabase:', sessionError);
-            Alert.alert('Login Error', sessionError.message || 'Failed to establish Supabase session');
-            return;
-          }
-
+              const { data: sessionData, error: sessionError } = await supabase.auth.setSession(sessionPayload);
           const token = sessionData?.session?.access_token;
           if (token) {
             console.log('Session established! Saving token to SecureStore:', token);
@@ -307,44 +324,26 @@ export default function LoginScreen() {
         if (result.type === 'success' && result.url) {
           console.log('WebBrowser redirect successful, URL:', result.url);
 
-          // Parse fragment/hash parameters first, falling back to query parameters
-          let accessToken: string | null = null;
-          let refreshToken: string | null = null;
-
-          const parsed = Linking.parse(result.url);
-          accessToken = (parsed.queryParams?.access_token as string) || null;
-          refreshToken = (parsed.queryParams?.refresh_token as string) || null;
-
-          if (!accessToken && result.url.includes('#')) {
-            const hash = result.url.split('#')[1];
-            const params = new URLSearchParams(hash);
-            accessToken = params.get('access_token');
-            refreshToken = params.get('refresh_token');
-          }
-
-          if (!accessToken && result.url.includes('#')) {
-            // Fallback parsing of fragment
-            const hashIndex = result.url.indexOf('#');
-            if (hashIndex !== -1) {
-              const hash = result.url.substring(hashIndex + 1);
-              const params = hash.split('&').reduce((acc, pair) => {
-                const [key, value] = pair.split('=');
-                if (key && value) {
-                  acc[key] = decodeURIComponent(value);
-                }
-                return acc;
-              }, {} as Record<string, string>);
-              accessToken = params.access_token || null;
-              refreshToken = params.refresh_token || null;
-            }
-          }
+          const {
+            accessToken,
+            refreshToken,
+            expiresIn,
+            tokenType,
+            providerToken,
+            providerRefreshToken,
+          } = parseAuthParamsFromUrl(result.url);
 
           if (accessToken && refreshToken) {
             console.log('Tokens extracted from redirect URL. Setting session on Supabase client...');
-            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            const sessionPayload: any = {
               access_token: accessToken,
               refresh_token: refreshToken,
-            });
+              expires_in: expiresIn ?? undefined,
+              token_type: tokenType ?? 'bearer',
+              provider_token: providerToken ?? undefined,
+              provider_refresh_token: providerRefreshToken ?? undefined,
+            };
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession(sessionPayload);
 
             if (sessionError) {
               console.error('Error setting session on Supabase:', sessionError);
